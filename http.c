@@ -562,7 +562,18 @@ failure:
 
 static int set_length(struct http_ctx *const h, const char *const len)
 {
-    h->ctx.post.len = strtoull(len, NULL, 10);
+    char *end;
+
+    errno = 0;
+    h->ctx.post.len = strtoull(len, &end, 10);
+
+    if (errno || *end != '\0')
+    {
+        fprintf(stderr, "%s: invalid length %s: %s\n",
+            __func__, len, strerror(errno));
+        return 1;
+    }
+
     return 0;
 }
 
