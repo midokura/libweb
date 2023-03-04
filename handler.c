@@ -310,27 +310,33 @@ struct handler *handler_alloc(const char *const tmpdir)
 int handler_add(struct handler *const h, const char *url,
     const enum http_op op, const handler_fn f, void *const user)
 {
-    if (!h || !(h->cfg = realloc(h->cfg, (h->n_cfg + 1) * sizeof *h->cfg)))
+    const size_t n = h->n_cfg + 1;
+    struct handler_cfg *const cfgs = realloc(h->cfg, n * sizeof *h->cfg),
+        *c = NULL;
+
+    if (!cfgs)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    char *const new = strdup(url);
+    c = &cfgs[h->n_cfg];
 
-    if (!new)
+    *c = (const struct handler_cfg)
     {
-        fprintf(stderr, "%s: malloc(3): %s\n", __func__, strerror(errno));
-        return -1;
-    }
-
-    h->cfg[h->n_cfg++] = (const struct handler_cfg)
-    {
-        .url = new,
+        .url = strdup(url),
         .op = op,
         .f = f,
         .user = user
     };
 
+    if (!c->url)
+    {
+        fprintf(stderr, "%s: strdup(3): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    h->cfg = cfgs;
+    h->n_cfg = n;
     return 0;
 }

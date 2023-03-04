@@ -470,14 +470,17 @@ static int http_write(struct http_ctx *const h, bool *const close)
 int http_response_add_header(struct http_response *const r,
     const char *const header, const char *const value)
 {
-    if (!(r->headers = realloc(r->headers,
-        sizeof (r->n_headers + 1) *sizeof *r->headers)))
+    const size_t n = r->n_headers + 1;
+    struct http_header *const headers = realloc(r->headers,
+        n * sizeof *r->headers), *h = NULL;
+
+    if (!headers)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    struct http_header *const h = &r->headers[r->n_headers++];
+    h = &headers[r->n_headers];
 
     *h = (const struct http_header)
     {
@@ -487,13 +490,14 @@ int http_response_add_header(struct http_response *const r,
 
     if (!h->header || !h->value)
     {
-        fprintf(stderr, "%s: malloc(3): %s\n", __func__, strerror(errno));
+        fprintf(stderr, "%s: strdup(3): %s\n", __func__, strerror(errno));
         free(h->header);
         free(h->value);
-        free(h);
         return -1;
     }
 
+    r->headers = headers;
+    r->n_headers = n;
     return 0;
 }
 
@@ -984,16 +988,21 @@ static int set_content_disposition(struct http_ctx *const h,
             __func__, (int)(sep - c), c);
         return 1;
     }
-    else if (!(m->forms = realloc(m->forms,
-        (m->nforms + 1) * sizeof *m->forms)))
+
+    const size_t n = m->nforms + 1;
+    struct form *const forms = realloc(m->forms, n * sizeof *m->forms);
+
+    if (!forms)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    struct form *const f = &m->forms[m->nforms++];
+    struct form *const f = &forms[m->nforms];
 
     *f = (const struct form){0};
+    m->nforms = n;
+    m->forms = forms;
     return cd_fields(h, f, sep);
 }
 
@@ -1193,13 +1202,17 @@ static int apply_from_file(struct http_ctx *const h, struct form *const f)
 
     m->fd = -1;
 
-    if (!(m->files = realloc(m->files, (m->nfiles + 1) * sizeof *m->files)))
+    const size_t n = m->nfiles + 1;
+    struct http_post_file *const files = realloc(m->files,
+        n * sizeof *m->files);
+
+    if (!files)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    struct http_post_file *const pf = &m->files[m->nfiles++];
+    struct http_post_file *const pf = &files[m->nfiles];
 
     *pf = (const struct http_post_file)
     {
@@ -1207,6 +1220,8 @@ static int apply_from_file(struct http_ctx *const h, struct form *const f)
         .filename = f->filename
     };
 
+    m->files = files;
+    m->nfiles = n;
     return 0;
 }
 
@@ -1575,13 +1590,18 @@ char *http_decode_url(const char *url)
 
     while (*url)
     {
-        if (!(ret = realloc(ret, n + 1)))
+        char *const r = realloc(ret, n + 1);
+
+        if (!r)
         {
             fprintf(stderr, "%s: realloc(3) loop: %s\n",
                 __func__, strerror(errno));
             goto failure;
         }
-        else if (*url != '%')
+
+        ret = r;
+
+        if (*url != '%')
             ret[n++] = *url++;
         else if (*(url + 1) && *(url + 2))
         {
@@ -1597,12 +1617,15 @@ char *http_decode_url(const char *url)
         }
     }
 
-    if (!(ret = realloc(ret, n + 1)))
+    char *const r = realloc(ret, n + 1);
+
+    if (!r)
     {
         fprintf(stderr, "%s: realloc(3) end: %s\n", __func__, strerror(errno));
         goto failure;
     }
 
+    ret = r;
     ret[n] = '\0';
     return ret;
 

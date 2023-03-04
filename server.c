@@ -58,12 +58,17 @@ int server_client_close(struct server *const s, struct server_client *const c)
             {
                 memcpy(ref, ref + 1, s->n - i);
 
-                if (!(s->c = realloc(s->c, (s->n - 1) * sizeof *s->c)))
+                const size_t n = s->n - 1;
+                struct server_client *const c = realloc(s->c, n * sizeof *s->c);
+
+                if (!c)
                 {
                     fprintf(stderr, "%s: realloc(3): %s\n",
                         __func__, strerror(errno));
                     return -1;
                 }
+
+                s->c = c;
             }
             else
             {
@@ -127,19 +132,26 @@ static struct server_client *alloc_client(struct server *const s)
             __func__, strerror(errno));
         return NULL;
     }
-    else if (!(s->c = realloc(s->c, (s->n + 1) * sizeof *s->c)))
+
+    const size_t n = s->n + 1;
+    struct server_client *const clients = realloc(s->c, n * sizeof *s->c);
+
+    if (!clients)
     {
-        fprintf(stderr, "%s: realloc(3): %s\n",
-            __func__, strerror(errno));
+        fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return NULL;
     }
 
-    s->c[s->n] = (const struct server_client)
+    struct server_client *const c = &clients[s->n];
+
+    *c = (const struct server_client)
     {
         .fd = fd
     };
 
-    return &s->c[s->n++];
+    s->c = clients;
+    s->n = n;
+    return c;
 }
 
 void server_client_write_pending(struct server_client *const c,

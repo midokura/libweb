@@ -101,25 +101,30 @@ int html_node_set_value_unescaped(struct html_node *const n,
 int html_node_add_attr(struct html_node *const n, const char *const attr,
     const char *const val)
 {
-    if (!(n->attrs = realloc(n->attrs, (n->n + 1) * sizeof *n->attrs)))
+    const size_t el = n->n + 1;
+    struct html_attribute *const attrs = realloc(n->attrs,
+        el * sizeof *n->attrs), *a = NULL;
+
+    if (!attrs)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    struct html_attribute *const a = &n->attrs[n->n++];
-
+    a = &attrs[n->n];
     *a = (const struct html_attribute){0};
 
     if (!(a->attr = strdup(attr))
         || (val && !(a->value = strdup(val))))
     {
-        fprintf(stderr, "%s: malloc(3): %s\n", __func__, strerror(errno));
+        fprintf(stderr, "%s: strdup(3): %s\n", __func__, strerror(errno));
         free(a->attr);
         free(a->value);
         return -1;
     }
 
+    n->attrs = attrs;
+    n->n = el;
     return 0;
 }
 
