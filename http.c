@@ -790,7 +790,7 @@ static int process_header(struct http_ctx *const h, const char *const line,
         const struct header *const hdr = &headers[i];
         int ret;
 
-        if (!strncmp(line, hdr->header, n) && (ret = hdr->f(h, value)))
+        if (!strncasecmp(line, hdr->header, n) && (ret = hdr->f(h, value)))
             return ret;
     }
 
