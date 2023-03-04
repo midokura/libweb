@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 struct http_ctx
 {
@@ -1503,12 +1504,51 @@ static int http_read(struct http_ctx *const h, bool *const close)
     return -1;
 }
 
+static int append_expire(struct dynstr *const d)
+{
+    time_t t = time(NULL);
+
+    if (t == (time_t)-1)
+    {
+        fprintf(stderr, "%s: time(3): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    t += 365 * 24 * 60 * 60;
+
+    struct tm tm;
+
+    if (!localtime_r(&t, &tm))
+    {
+        fprintf(stderr, "%s: localtime_r(3): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    char s[sizeof "Thu, 01 Jan 1970 00:00:00 GMT"];
+
+    if (!strftime(s, sizeof s, "%a, %d %b %Y %H:%M:%S GMT", &tm))
+    {
+        fprintf(stderr, "%s: strftime(3) failed\n", __func__);
+        return -1;
+    }
+
+    dynstr_append_or_ret_nonzero(d, "; Expires=%s", s);
+    return 0;
+}
+
 char *http_cookie_create(const char *const key, const char *const value)
 {
     struct dynstr d;
 
     dynstr_init(&d);
     dynstr_append_or_ret_null(&d, "%s=%s; HttpOnly", key, value);
+
+    if (append_expire(&d))
+    {
+        dynstr_free(&d);
+        return NULL;
+    }
+
     return d.str;
 }
 
