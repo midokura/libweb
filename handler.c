@@ -311,8 +311,7 @@ int handler_add(struct handler *const h, const char *url,
     const enum http_op op, const handler_fn f, void *const user)
 {
     const size_t n = h->n_cfg + 1;
-    struct handler_cfg *const cfgs = realloc(h->cfg, n * sizeof *h->cfg),
-        *c = NULL;
+    struct handler_cfg *const cfgs = realloc(h->cfg, n * sizeof *h->cfg);
 
     if (!cfgs)
     {
@@ -320,7 +319,7 @@ int handler_add(struct handler *const h, const char *url,
         return -1;
     }
 
-    c = &cfgs[h->n_cfg];
+    struct handler_cfg *const c = &cfgs[h->n_cfg];
 
     *c = (const struct handler_cfg)
     {

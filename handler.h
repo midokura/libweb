@@ -4,7 +4,6 @@
 #include "http.h"
 #include <stddef.h>
 
-struct handler;
 typedef int (*handler_fn)(const struct http_payload *p,
     struct http_response *r, void *user);
 
