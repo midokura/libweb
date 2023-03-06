@@ -11,6 +11,7 @@ DEPS = $(OBJECTS:.o=.d)
 OBJECTS = \
 	auth.o \
 	base64.o \
+	cftw.o \
 	handler.o \
 	html.o \
 	http.o \
