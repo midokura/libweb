@@ -4,7 +4,8 @@
 CC = cc # c99 (default value) does not allow POSIX extensions.
 PROJECT = slcl
 O = -Og
-CFLAGS = $(O) -g -Wall -Idynstr/include -MD -MF -
+CDEFS = -D_FILE_OFFSET_BITS=64 # Required for large file support on 32-bit.
+CFLAGS = $(O) $(CDEFS) -g -Wall -Idynstr/include -MD -MF -
 LIBS = -lcjson -lssl -lm -lcrypto
 LDFLAGS = $(LIBS)
 DEPS = $(OBJECTS:.o=.d)

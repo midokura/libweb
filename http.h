@@ -79,6 +79,8 @@ struct http_cfg
     int (*write)(const void *buf, size_t n, void *user);
     int (*payload)(const struct http_payload *p, struct http_response *r,
         void *user);
+    int (*length)(unsigned long long len, const struct http_cookie *c,
+        void *user);
     const char *tmpdir;
     void *user;
 };

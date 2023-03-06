@@ -797,6 +797,18 @@ static int process_header(struct http_ctx *const h, const char *const line,
     return 0;
 }
 
+static int check_length(struct http_ctx *const h)
+{
+    struct ctx *const c = &h->ctx;
+    const struct http_cookie cookie =
+    {
+        .field = c->field,
+        .value = c->value
+    };
+
+    return h->cfg.length(c->post.len, &cookie, h->cfg.user);
+}
+
 static int header_cr_line(struct http_ctx *const h)
 {
     const char *const line = (const char *)h->line;
@@ -810,11 +822,20 @@ static int header_cr_line(struct http_ctx *const h)
                 return payload_get(h, line);
 
             case HTTP_OP_POST:
+            {
                 if (!c->post.len)
                     return payload_post(h, line);
+                else if (c->boundary)
+                {
+                    const int res = check_length(h);
+
+                    if (res)
+                        return res;
+                }
 
                 c->state = BODY_LINE;
                 return 0;
+            }
         }
     }
 

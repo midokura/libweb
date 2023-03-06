@@ -7,7 +7,15 @@
 typedef int (*handler_fn)(const struct http_payload *p,
     struct http_response *r, void *user);
 
-struct handler *handler_alloc(const char *tmpdir);
+struct handler_cfg
+{
+    const char *tmpdir;
+    int (*length)(unsigned long long len, const struct http_cookie *c,
+        void *user);
+    void *user;
+};
+
+struct handler *handler_alloc(const struct handler_cfg *cfg);
 void handler_free(struct handler *h);
 int handler_add(struct handler *h, const char *url, enum http_op op,
     handler_fn f, void *user);

@@ -10,15 +10,14 @@
 
 struct handler
 {
-    const char *tmpdir;
-
-    struct handler_cfg
+    struct handler_cfg cfg;
+    struct elem
     {
         char *url;
         enum http_op op;
         handler_fn f;
         void *user;
-    } *cfg;
+    } *elem;
 
     struct server *server;
     struct client
@@ -96,10 +95,10 @@ static int on_payload(const struct http_payload *const p,
 
     for (size_t i = 0; i < h->n_cfg; i++)
     {
-        const struct handler_cfg *const cfg = &h->cfg[i];
+        const struct elem *const e = &h->elem[i];
 
-        if (cfg->op == p->op && !wildcard_cmp(p->resource, cfg->url))
-            return cfg->f(p, r, cfg->user);
+        if (e->op == p->op && !wildcard_cmp(p->resource, e->url))
+            return e->f(p, r, e->user);
     }
 
     fprintf(stderr, "Not found: %s\n", p->resource);
@@ -108,6 +107,18 @@ static int on_payload(const struct http_payload *const p,
     {
         .status = HTTP_STATUS_NOT_FOUND
     };
+
+    return 0;
+}
+
+static int on_length(const unsigned long long len,
+    const struct http_cookie *const c, void *const user)
+{
+    struct client *const cl = user;
+    struct handler *const h = cl->h;
+
+    if (h->cfg.length)
+        return h->cfg.length(len, c, h->cfg.user);
 
     return 0;
 }
@@ -134,8 +145,9 @@ static struct client *find_or_alloc_client(struct handler *const h,
         .read = on_read,
         .write = on_write,
         .payload = on_payload,
+        .length = on_length,
         .user = ret,
-        .tmpdir = h->tmpdir
+        .tmpdir = h->cfg.tmpdir
     };
 
     *ret = (const struct client)
@@ -282,9 +294,9 @@ void handler_free(struct handler *const h)
     if (h)
     {
         for (size_t i = 0; i < h->n_cfg; i++)
-            free(h->cfg[i].url);
+            free(h->elem[i].url);
 
-        free(h->cfg);
+        free(h->elem);
         free_clients(h);
         server_close(h->server);
     }
@@ -292,7 +304,7 @@ void handler_free(struct handler *const h)
     free(h);
 }
 
-struct handler *handler_alloc(const char *const tmpdir)
+struct handler *handler_alloc(const struct handler_cfg *const cfg)
 {
     struct handler *const h = malloc(sizeof *h);
 
@@ -303,7 +315,7 @@ struct handler *handler_alloc(const char *const tmpdir)
         return NULL;
     }
 
-    *h = (const struct handler){.tmpdir = tmpdir};
+    *h = (const struct handler){.cfg = *cfg};
     return h;
 }
 
@@ -311,17 +323,17 @@ int handler_add(struct handler *const h, const char *url,
     const enum http_op op, const handler_fn f, void *const user)
 {
     const size_t n = h->n_cfg + 1;
-    struct handler_cfg *const cfgs = realloc(h->cfg, n * sizeof *h->cfg);
+    struct elem *const elem = realloc(h->elem, n * sizeof *h->elem);
 
-    if (!cfgs)
+    if (!elem)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    struct handler_cfg *const c = &cfgs[h->n_cfg];
+    struct elem *const e = &elem[h->n_cfg];
 
-    *c = (const struct handler_cfg)
+    *e = (const struct elem)
     {
         .url = strdup(url),
         .op = op,
@@ -329,13 +341,13 @@ int handler_add(struct handler *const h, const char *url,
         .user = user
     };
 
-    if (!c->url)
+    if (!e->url)
     {
         fprintf(stderr, "%s: strdup(3): %s\n", __func__, strerror(errno));
         return -1;
     }
 
-    h->cfg = cfgs;
+    h->elem = elem;
     h->n_cfg = n;
     return 0;
 }
