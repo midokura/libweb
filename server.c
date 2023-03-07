@@ -44,7 +44,7 @@ int server_client_close(struct server *const s, struct server_client *const c)
 
     for (size_t i = 0; i < s->n; i++)
     {
-        struct server_client *ref = &s->c[i];
+        struct server_client *const ref = &s->c[i];
 
         if (c == ref)
         {
