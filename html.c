@@ -24,6 +24,12 @@ static char *html_encode(const char *s)
 
     dynstr_init(&d);
 
+    if (!*s && dynstr_append(&d, ""))
+    {
+        fprintf(stderr, "%s: dynstr_append empty failed\n", __func__);
+        goto failure;
+    }
+
     while (*s)
     {
         static const struct esc
