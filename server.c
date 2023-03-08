@@ -48,17 +48,18 @@ int server_client_close(struct server *const s, struct server_client *const c)
 
         if (c == ref)
         {
+            const size_t n = s->n - 1;
+
             if ((ret = close(c->fd)))
             {
                 fprintf(stderr, "%s: close(2): %s\n",
                     __func__, strerror(errno));
                 return -1;
             }
-            else if (s->n - 1)
+            else if (n)
             {
-                memcpy(ref, ref + 1, s->n - i);
+                memcpy(ref, ref + 1, (s->n - i - 1) * sizeof *ref);
 
-                const size_t n = s->n - 1;
                 struct server_client *const c = realloc(s->c, n * sizeof *s->c);
 
                 if (!c)
@@ -76,7 +77,7 @@ int server_client_close(struct server *const s, struct server_client *const c)
                 s->c = NULL;
             }
 
-            s->n--;
+            s->n = n;
             break;
         }
     }
