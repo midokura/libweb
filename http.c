@@ -225,21 +225,26 @@ static void ctx_free(struct ctx *const c)
         free(m->files);
         free(m->boundary);
 
+        if (m->fd >= 0 && close(m->fd))
+            fprintf(stderr, "%s: close(2) m->fd: %s\n",
+                __func__, strerror(errno));
+
         for (size_t i = 0; i < m->nforms; i++)
         {
             struct form *const f = &m->forms[i];
 
             free(f->name);
             free(f->filename);
-            free(f->tmpname);
             free(f->value);
+
+            if (f->tmpname && remove(f->tmpname) && errno != ENOENT)
+                fprintf(stderr, "%s: remove(3) %s: %s\n",
+                    __func__, f->tmpname, strerror(errno));
+
+            free(f->tmpname);
         }
 
         free(m->forms);
-
-        if (m->fd >= 0 && close(m->fd))
-            fprintf(stderr, "%s: close(2) m->fd: %s\n",
-                __func__, strerror(errno));
     }
 
     free(c->field);
