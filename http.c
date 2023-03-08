@@ -311,8 +311,7 @@ static int write_start_line(struct http_ctx *const h, bool *const close)
     struct write_ctx *const w = &h->wctx;
     struct dynstr *const d = &w->d;
     const size_t rem = d->len - w->n;
-    const int res = h->cfg.write(d->str + w->n, rem,
-        h->cfg.user);
+    const int res = h->cfg.write(d->str + w->n, rem, h->cfg.user);
 
     if (res <= 0)
         return rw_error(res, close);
