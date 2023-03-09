@@ -14,6 +14,7 @@ OBJECTS = \
 	base64.o \
 	cftw.o \
 	handler.o \
+	hex.o \
 	html.o \
 	http.o \
 	jwt.o \
