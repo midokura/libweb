@@ -11,7 +11,7 @@ struct handler_cfg
 {
     const char *tmpdir;
     int (*length)(unsigned long long len, const struct http_cookie *c,
-        void *user);
+        struct http_response *r, void *user);
     void *user;
 };
 

@@ -85,7 +85,7 @@ struct http_ctx
 
     struct write_ctx
     {
-        bool pending;
+        bool pending, close;
         enum state state;
         struct http_response r;
         off_t n;
@@ -372,6 +372,8 @@ static int write_header_cr_line(struct http_ctx *const h, bool *const close)
         return rw_error(res, close);
     else if ((w->n += res) >= d->len)
     {
+        const bool close_pending = w->close;
+
         dynstr_free(d);
 
         if (w->r.n)
@@ -384,6 +386,8 @@ static int write_header_cr_line(struct http_ctx *const h, bool *const close)
             fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
             return -1;
         }
+        else if (close_pending)
+            *close = true;
     }
 
     return 0;
@@ -394,17 +398,24 @@ static int write_body_mem(struct http_ctx *const h, bool *const close)
     struct write_ctx *const w = &h->wctx;
     const struct http_response *const r = &w->r;
     const size_t rem = r->n - w->n;
-    const int res = h->cfg.write((const char *)r->buf.ro + w->n, rem,
+    int res = h->cfg.write((const char *)r->buf.ro + w->n, rem,
         h->cfg.user);
 
     if (res <= 0)
         return rw_error(res, close);
     else if ((w->n += res) >= r->n)
     {
+        const bool close_pending = w->close;
+
         if (h->version == HTTP_1_0)
             *close = true;
 
-        return write_ctx_free(w);
+        if ((res = write_ctx_free(w)))
+            fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
+        else if (close_pending)
+            *close = true;
+
+        return res;
     }
 
     return 0;
@@ -425,16 +436,21 @@ static int write_body_file(struct http_ctx *const h, bool *const close)
         return -1;
     }
 
-    const int res = h->cfg.write(buf, rem, h->cfg.user);
+    int res = h->cfg.write(buf, rem, h->cfg.user);
 
     if (res <= 0)
         return rw_error(res, close);
     else if ((w->n += res) >= r->n)
     {
+        const bool close_pending = w->close;
+
         if (h->version == HTTP_1_0)
             *close = true;
 
-        return write_ctx_free(w);
+        if ((res = write_ctx_free(w)))
+            fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
+        else if (close_pending)
+            *close = true;
     }
 
     return 0;
@@ -810,7 +826,7 @@ static int check_length(struct http_ctx *const h)
         .value = c->value
     };
 
-    return h->cfg.length(c->post.len, &cookie, h->cfg.user);
+    return h->cfg.length(c->post.len, &cookie, &h->wctx.r, h->cfg.user);
 }
 
 static int header_cr_line(struct http_ctx *const h)
@@ -834,7 +850,10 @@ static int header_cr_line(struct http_ctx *const h)
                     const int res = check_length(h);
 
                     if (res)
-                        return res;
+                    {
+                        h->wctx.close = true;
+                        return start_response(h);
+                    }
                 }
 
                 c->state = BODY_LINE;

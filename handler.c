@@ -112,13 +112,14 @@ static int on_payload(const struct http_payload *const p,
 }
 
 static int on_length(const unsigned long long len,
-    const struct http_cookie *const c, void *const user)
+    const struct http_cookie *const c, struct http_response *const r,
+    void *const user)
 {
     struct client *const cl = user;
     struct handler *const h = cl->h;
 
     if (h->cfg.length)
-        return h->cfg.length(len, c, h->cfg.user);
+        return h->cfg.length(len, c, r, h->cfg.user);
 
     return 0;
 }

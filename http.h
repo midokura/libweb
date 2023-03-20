@@ -45,6 +45,7 @@ struct http_payload
     X(UNAUTHORIZED, "Unauthorized", 401) \
     X(FORBIDDEN, "Forbidden", 403) \
     X(NOT_FOUND, "Not found", 404) \
+    X(PAYLOAD_TOO_LARGE, "Payload too large", 413) \
     X(INTERNAL_ERROR, "Internal Server Error", 500)
 
 struct http_response
@@ -80,7 +81,7 @@ struct http_cfg
     int (*payload)(const struct http_payload *p, struct http_response *r,
         void *user);
     int (*length)(unsigned long long len, const struct http_cookie *c,
-        void *user);
+        struct http_response *r, void *user);
     const char *tmpdir;
     void *user;
 };
