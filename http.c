@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "http.h"
 #include <dynstr.h>
 #include <sys/types.h>

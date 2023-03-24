@@ -1,7 +1,6 @@
 .POSIX:
 .SUFFIXES: .c .o
 
-CC = cc # c99 (default value) does not allow POSIX extensions.
 PROJECT = slcl
 O = -Og
 CDEFS = -D_FILE_OFFSET_BITS=64 # Required for large file support on 32-bit.

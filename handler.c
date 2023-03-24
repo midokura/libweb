@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "handler.h"
 #include "http.h"
 #include "server.h"

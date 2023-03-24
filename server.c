@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "server.h"
 #include <fcntl.h>
 #include <sys/select.h>
