@@ -4,7 +4,7 @@
 PROJECT = slcl
 O = -Og
 CDEFS = -D_FILE_OFFSET_BITS=64 # Required for large file support on 32-bit.
-CFLAGS = $(O) $(CDEFS) -g -Wall -Idynstr/include -MD -MF -
+CFLAGS = $(O) $(CDEFS) -g -Wall -Idynstr/include -MD -MF $(@:.o=.d)
 LIBS = -lcjson -lssl -lm -lcrypto
 LDFLAGS = $(LIBS)
 DEPS = $(OBJECTS:.o=.d)
@@ -29,8 +29,5 @@ clean:
 
 $(PROJECT): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
-
-.c.o:
-	$(CC) $(CFLAGS) -c $< -o $@ > $(@:.o=.d)
 
 -include $(DEPS)
