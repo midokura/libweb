@@ -35,6 +35,13 @@ struct http_payload
             } *files;
         } post;
     } u;
+
+    const struct http_arg
+    {
+        char *key, *value;
+    } *args;
+
+    size_t n_args;
 };
 
 #define HTTP_STATUSES \

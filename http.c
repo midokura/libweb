@@ -84,6 +84,9 @@ struct http_ctx
                 } *forms;
             } mf;
         } u;
+
+        struct http_arg *args;
+        size_t n_args;
     } ctx;
 
     struct write_ctx
@@ -124,6 +127,218 @@ static int get_version(struct http_ctx *const h, const char *const v)
         }
 
     return -1;
+}
+
+static void arg_free(struct http_arg *const a)
+{
+    if (a)
+    {
+        free(a->key);
+        free(a->value);
+    }
+}
+
+static size_t chrcnt(const char *s, const int c)
+{
+    size_t ret = 0;
+
+    while (*s++ == c)
+        ret++;
+
+    return ret;
+}
+
+static void arg_decode(char *s)
+{
+    while ((s = strchr(s, '+')))
+        *s = ' ';
+}
+
+static int parse_arg(struct ctx *const c, const char *const arg,
+    const size_t n)
+{
+    int ret = -1;
+    struct http_arg a = {0}, *args = NULL;
+    const char *sep = memchr(arg, '=', n);
+
+    if (!sep)
+    {
+        fprintf(stderr, "%s: expected '='\n", __func__);
+        ret = 1;
+        goto end;
+    }
+    else if (sep == arg)
+    {
+        fprintf(stderr, "%s: expected key\n", __func__);
+        ret = 1;
+        goto end;
+    }
+
+    const char *const value = sep + 1;
+
+    if (!*value)
+    {
+        fprintf(stderr, "%s: missing value: %.*s\n", __func__, (int)n, arg);
+        ret = 1;
+        goto end;
+    }
+
+    const size_t keylen = sep - arg, valuelen = n - keylen - 1;
+
+    a = (const struct http_arg)
+    {
+        .key = strndup(arg, keylen),
+        .value = strndup(value, valuelen)
+    };
+
+    if (!a.key || !a.value)
+    {
+        fprintf(stderr, "%s: strndup(3) key: %s\n", __func__, strerror(errno));
+        goto end;
+    }
+    else if (!(args = realloc(c->args, (c->n_args + 1) * sizeof *args)))
+    {
+        fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
+        goto end;
+    }
+
+    arg_decode(a.key);
+    arg_decode(a.value);
+    args[c->n_args++] = a;
+    c->args = args;
+    ret = 0;
+
+end:
+    if (ret)
+        arg_free(&a);
+
+    return ret;
+}
+
+static int parse_first_arg(struct ctx *const c, const char *const arg,
+    const char *const ad_arg, const char *const res)
+{
+    int error;
+    const char *const next = arg + 1;
+
+    if (chrcnt(next, '?'))
+    {
+        fprintf(stderr, "%s: more than one argument indicator '?' found: %s\n",
+            __func__, res);
+        return 1;
+    }
+
+    const size_t n = ad_arg ? ad_arg - next : strlen(next);
+
+    if (!n)
+    {
+        fprintf(stderr, "%s: unterminated argument: %s\n", __func__, res);
+        return 1;
+    }
+    else if ((error = parse_arg(c, next, n)))
+    {
+        fprintf(stderr, "%s: parse_arg failed: %s\n", __func__, res);
+        return error;
+    }
+
+    return 0;
+}
+
+static int parse_adargs(struct ctx *const c, const char *const start,
+    const char *const res)
+{
+    for (const char *arg = start, *next; arg; arg = next)
+    {
+        next = strchr(++arg, '&');
+
+        int error;
+        const size_t n = next ? next - arg : strlen(arg);
+
+        if ((error = parse_arg(c, arg, n)))
+        {
+            fprintf(stderr, "%s: parse_arg failed: %s\n", __func__, res);
+            return error;
+        }
+    }
+
+    return 0;
+}
+
+static int parse_args(struct ctx *const c, const char *const res,
+    size_t *const reslen)
+{
+    int error;
+    const char *const arg_start = strchr(res, '?'),
+        *const ad_arg = strchr(res, '&');
+
+    if (!arg_start)
+    {
+        if (!ad_arg)
+        {
+            *reslen = strlen(res);
+            return 0;
+        }
+        else
+        {
+            fprintf(stderr, "%s: expected argument indicator '?': %s\n",
+            __func__, res);
+            return 1;
+        }
+    }
+    else if (arg_start == res)
+    {
+        fprintf(stderr, "%s: expected resource: %s\n", __func__, res);
+        return 1;
+    }
+    else if (ad_arg && ad_arg <= arg_start)
+    {
+        fprintf(stderr, "%s: expected '?' before '&': %s\n", __func__, res);
+        return 1;
+    }
+    else if ((error = parse_first_arg(c, arg_start, ad_arg, res)))
+    {
+        fprintf(stderr, "%s: parse_first_arg failed\n", __func__);
+        return error;
+    }
+    else if ((error = parse_adargs(c, ad_arg, res)))
+    {
+        fprintf(stderr, "%s: parse_adargs failed\n", __func__);
+        return error;
+    }
+
+    *reslen = arg_start - res;
+    return 0;
+}
+
+static int parse_resource(struct ctx *const c, const char *const enc_res)
+{
+    int ret = -1, error;
+    size_t reslen;
+    char *trimmed_encres = NULL, *resource = NULL;
+
+    if (!(resource = http_decode_url(enc_res)))
+    {
+        fprintf(stderr, "%s: http_decode_url failed\n", __func__);
+        goto end;
+    }
+    else if ((error = parse_args(c, resource, &reslen)))
+    {
+        fprintf(stderr, "%s: parse_args failed\n", __func__);
+        ret = error;
+        goto end;
+    }
+    else if (!(trimmed_encres = strndup(resource, reslen)))
+    {
+        fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
+        goto end;
+    }
+
+    c->resource = trimmed_encres;
+    ret = 0;
+
+end:
+    free(resource);
+    return ret;
 }
 
 static int start_line(struct http_ctx *const h)
@@ -190,7 +405,7 @@ static int start_line(struct http_ctx *const h)
         return 1;
     }
 
-    int ret = 1;
+    int ret = 1, error;
     char *enc_res = NULL;
 
     if (get_version(h, protocol))
@@ -204,9 +419,10 @@ static int start_line(struct http_ctx *const h)
         ret = -1;
         goto end;
     }
-    else if (!(c->resource = http_decode_url(enc_res)))
+    else if ((error = parse_resource(c, enc_res)))
     {
-        fprintf(stderr, "%s: http_decode_url failed\n", __func__);
+        fprintf(stderr, "%s: parse_resource failed\n", __func__);
+        ret = error;
         goto end;
     }
 
@@ -255,6 +471,10 @@ static void ctx_free(struct ctx *const c)
     free(c->resource);
     free(c->boundary);
 
+    for (size_t i = 0; i < c->n_args; i++)
+        arg_free(&c->args[i]);
+
+    free(c->args);
     *c = (const struct ctx){0};
 }
 
@@ -673,10 +893,9 @@ static int set_content_type(struct http_ctx *const h, const char *const type)
     return 0;
 }
 
-static int payload_get(struct http_ctx *const h, const char *const line)
+static struct http_payload ctx_to_payload(const struct ctx *const c)
 {
-    struct ctx *const c = &h->ctx;
-    const struct http_payload p =
+    return (const struct http_payload)
     {
         .cookie =
         {
@@ -685,9 +904,16 @@ static int payload_get(struct http_ctx *const h, const char *const line)
         },
 
         .op = c->op,
-        .resource = c->resource
+        .resource = c->resource,
+        .args = c->args,
+        .n_args = c->n_args
     };
+}
 
+static int payload_get(struct http_ctx *const h, const char *const line)
+{
+    struct ctx *const c = &h->ctx;
+    const struct http_payload p = ctx_to_payload(c);
     const int ret = h->cfg.payload(&p, &h->wctx.r, h->cfg.user);
 
     ctx_free(c);
@@ -701,18 +927,7 @@ static int payload_get(struct http_ctx *const h, const char *const line)
 static int payload_post(struct http_ctx *const h, const char *const line)
 {
     struct ctx *const c = &h->ctx;
-    const struct http_payload pl =
-    {
-        .cookie =
-        {
-            .field = c->field,
-            .value = c->value
-        },
-
-        .op = c->op,
-        .resource = c->resource
-    };
-
+    const struct http_payload pl = ctx_to_payload(c);
     const int ret = h->cfg.payload(&pl, &h->wctx.r, h->cfg.user);
 
     ctx_free(c);
