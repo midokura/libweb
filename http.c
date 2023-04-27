@@ -15,6 +15,8 @@
 #include <strings.h>
 #include <time.h>
 
+#define HTTP_VERSION "HTTP/1.1"
+
 struct http_ctx
 {
     struct ctx
@@ -98,36 +100,12 @@ struct http_ctx
         struct dynstr d;
     } wctx;
 
-    enum version
-    {
-        HTTP_1_0,
-        HTTP_1_1
-    } version;
-
     /* From RFC9112, section 3 (Request line):
      * It is RECOMMENDED that all HTTP senders and recipients support,
      * at a minimum, request-line lengths of 8000 octets. */
     char line[8000];
     struct http_cfg cfg;
 };
-
-static const char *const versions[] =
-{
-    [HTTP_1_0] = "HTTP/1.0",
-    [HTTP_1_1] = "HTTP/1.1"
-};
-
-static int get_version(struct http_ctx *const h, const char *const v)
-{
-    for (enum version i = 0; i < sizeof versions / sizeof *versions; i++)
-        if (!strcmp(versions[i], v))
-        {
-            h->version = i;
-            return 0;
-        }
-
-    return -1;
-}
 
 static void arg_free(struct http_arg *const a)
 {
@@ -408,7 +386,7 @@ static int start_line(struct http_ctx *const h)
     int ret = 1, error;
     char *enc_res = NULL;
 
-    if (get_version(h, protocol))
+    if (strcmp(protocol, HTTP_VERSION))
     {
         fprintf(stderr, "%s: unsupported protocol %s\n", __func__, protocol);
         goto end;
@@ -630,9 +608,6 @@ static int write_body_mem(struct http_ctx *const h, bool *const close)
     {
         const bool close_pending = w->close;
 
-        if (h->version == HTTP_1_0)
-            *close = true;
-
         if ((res = write_ctx_free(w)))
             fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
         else if (close_pending)
@@ -666,9 +641,6 @@ static int write_body_file(struct http_ctx *const h, bool *const close)
     else if ((w->n += res) >= r->n)
     {
         const bool close_pending = w->close;
-
-        if (h->version == HTTP_1_0)
-            *close = true;
 
         if ((res = write_ctx_free(w)))
             fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
@@ -763,8 +735,8 @@ static int start_response(struct http_ctx *const h)
 
     w->pending = true;
     dynstr_init(&w->d);
-    dynstr_append_or_ret_nonzero(&w->d, "%s %d %s\r\n",
-        versions[h->version], c->code, c->descr);
+    dynstr_append_or_ret_nonzero(&w->d, HTTP_VERSION " %d %s\r\n",
+        c->code, c->descr);
     return 0;
 }
 
