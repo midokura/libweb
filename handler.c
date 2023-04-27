@@ -233,7 +233,7 @@ int handler_listen(struct handler *const h, const short port)
     for (;;)
     {
         bool exit, io;
-        struct server_client *const c = server_select(h->server, &io, &exit);
+        struct server_client *const c = server_poll(h->server, &io, &exit);
 
         if (exit)
         {
@@ -242,7 +242,7 @@ int handler_listen(struct handler *const h, const short port)
         }
         else if (!c)
         {
-            fprintf(stderr, "%s: server_select failed\n", __func__);
+            fprintf(stderr, "%s: server_poll failed\n", __func__);
             return -1;
         }
 

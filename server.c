@@ -2,9 +2,9 @@
 
 #include "server.h"
 #include <fcntl.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -170,63 +170,102 @@ static void handle_signal(const int signum)
     do_exit = 1;
 }
 
-struct server_client *server_select(struct server *const s, bool *const io,
+struct server_client *server_poll(struct server *const s, bool *const io,
     bool *const exit)
 {
-    int nfds = -1;
-    fd_set rfds, wfds;
+    struct server_client *ret = NULL;
+    const nfds_t n = s->n + 1;
+    struct pollfd *const fds = malloc(n * sizeof *fds);
+
+    if (!fds)
+    {
+        fprintf(stderr, "%s: malloc(3): %s\n", __func__, strerror(errno));
+        goto end;
+    }
+
+    struct pollfd *const sfd = &fds[0];
 
     *io = *exit = false;
-
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-
-    for (size_t i = 0; i < s->n; i++)
+    *sfd = (const struct pollfd)
     {
+        .fd = s->fd,
+        .events = POLLIN
+    };
+
+    for (size_t i = 0, j = 1; i < s->n; i++, j++)
+    {
+        struct pollfd *const p = &fds[j];
         const struct server_client *const c = &s->c[i];
         const int fd = c->fd;
 
-        FD_SET(fd, &rfds);
+        *p = (const struct pollfd)
+        {
+            .fd = fd,
+            .events = POLLIN
+        };
 
         if (c->write)
-            FD_SET(fd, &wfds);
-
-        if (fd > nfds)
-            nfds = fd;
+            p->events |= POLLOUT;
     }
 
-    FD_SET(s->fd, &rfds);
+    int res;
 
-    if (s->fd > nfds)
-        nfds = s->fd;
+again:
 
-    const int res = select(nfds + 1, &rfds, &wfds, NULL, NULL);
+    res = poll(fds, n, -1);
 
     if (res < 0)
     {
         if (do_exit)
+        {
             *exit = true;
-        else
-            fprintf(stderr, "%s: select(2): %s\n", __func__, strerror(errno));
+            goto end;
+        }
 
-        return NULL;
+        switch (errno)
+        {
+            case EAGAIN:
+                /* Fall through. */
+            case EINTR:
+                goto again;
+
+            default:
+                fprintf(stderr, "%s: poll(2): %s\n", __func__, strerror(errno));
+                break;
+        }
+
+        goto end;
     }
-    else if (FD_ISSET(s->fd, &rfds))
-        return alloc_client(s);
-
-    for (size_t i = 0; i < s->n; i++)
+    else if (!res)
     {
+        fprintf(stderr, "%s: poll(2) returned zero\n", __func__);
+        goto end;
+    }
+
+    if (sfd->revents)
+    {
+        ret = alloc_client(s);
+        goto end;
+    }
+
+    for (size_t i = 0, j = 1; i < s->n; i++, j++)
+    {
+        const struct pollfd *const p = &fds[j];
         struct server_client *const c = &s->c[i];
 
-        if (FD_ISSET(c->fd, &rfds) || FD_ISSET(c->fd, &wfds))
+        if (p->revents)
         {
             *io = true;
-            return c;
+            ret = c;
+            goto end;
         }
     }
 
     fprintf(stderr, "%s: unlisted fd\n", __func__);
-    return NULL;
+
+end:
+    free(fds);
+    return ret;
 }
 
 static int init_signals(void)

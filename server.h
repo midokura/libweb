@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 struct server *server_init(unsigned short port);
-struct server_client *server_select(struct server *s, bool *io, bool *exit);
+struct server_client *server_poll(struct server *s, bool *io, bool *exit);
 int server_read(void *buf, size_t n, struct server_client *c);
 int server_write(const void *buf, size_t n, struct server_client *c);
 int server_close(struct server *s);
