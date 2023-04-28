@@ -599,7 +599,7 @@ static int write_body_mem(struct http_ctx *const h, bool *const close)
     struct write_ctx *const w = &h->wctx;
     const struct http_response *const r = &w->r;
     const size_t rem = r->n - w->n;
-    int res = h->cfg.write((const char *)r->buf.ro + w->n, rem,
+    const int res = h->cfg.write((const char *)r->buf.ro + w->n, rem,
         h->cfg.user);
 
     if (res <= 0)
@@ -608,8 +608,11 @@ static int write_body_mem(struct http_ctx *const h, bool *const close)
     {
         const bool close_pending = w->close;
 
-        if ((res = write_ctx_free(w)))
+        if (write_ctx_free(w))
+        {
             fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
+            return -1;
+        }
         else if (close_pending)
             *close = true;
 
@@ -634,7 +637,7 @@ static int write_body_file(struct http_ctx *const h, bool *const close)
         return -1;
     }
 
-    int res = h->cfg.write(buf, rem, h->cfg.user);
+    const int res = h->cfg.write(buf, rem, h->cfg.user);
 
     if (res <= 0)
         return rw_error(res, close);
@@ -642,8 +645,11 @@ static int write_body_file(struct http_ctx *const h, bool *const close)
     {
         const bool close_pending = w->close;
 
-        if ((res = write_ctx_free(w)))
+        if (write_ctx_free(w))
+        {
             fprintf(stderr, "%s: write_ctx_free failed\n", __func__);
+            return -1;
+        }
         else if (close_pending)
             *close = true;
     }
