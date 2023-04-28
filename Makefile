@@ -1,5 +1,4 @@
 .POSIX:
-.SUFFIXES: .c .o
 
 PROJECT = slcl
 O = -Og
