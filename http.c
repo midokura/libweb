@@ -1897,9 +1897,17 @@ char *http_decode_url(const char *url)
         else if (*(url + 1) && *(url + 2))
         {
             const char buf[sizeof "00"] = {*(url + 1), *(url + 2)};
+            char *endptr;
+            const unsigned long res = strtoul(buf, &endptr, 16);
 
-            ret[n++] = strtoul(buf, NULL, 16);
+            if (*endptr)
+            {
+                fprintf(stderr, "%s: invalid number %s\n", __func__, buf);
+                goto failure;
+            }
+
             url += 3;
+            ret[n++] = res;
         }
         else
         {
