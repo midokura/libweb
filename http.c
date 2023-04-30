@@ -126,18 +126,13 @@ static size_t chrcnt(const char *s, const int c)
     return ret;
 }
 
-static void arg_decode(char *s)
-{
-    while ((s = strchr(s, '+')))
-        *s = ' ';
-}
-
 static int parse_arg(struct ctx *const c, const char *const arg,
     const size_t n)
 {
     int ret = -1;
     struct http_arg a = {0}, *args = NULL;
     const char *sep = memchr(arg, '=', n);
+    char *enckey = NULL, *encvalue = NULL;
 
     if (!sep)
     {
@@ -163,15 +158,33 @@ static int parse_arg(struct ctx *const c, const char *const arg,
 
     const size_t keylen = sep - arg, valuelen = n - keylen - 1;
 
-    a = (const struct http_arg)
-    {
-        .key = strndup(arg, keylen),
-        .value = strndup(value, valuelen)
-    };
-
-    if (!a.key || !a.value)
+    if (!(enckey = strndup(arg, keylen)))
     {
         fprintf(stderr, "%s: strndup(3) key: %s\n", __func__, strerror(errno));
+        goto end;
+    }
+    else if (!(encvalue = strndup(value, valuelen)))
+    {
+        fprintf(stderr, "%s: strndup(3) value: %s\n",
+            __func__, strerror(errno));
+        goto end;
+    }
+
+    /* URL parameters use '+' for whitespace, rather than %20. */
+    a = (const struct http_arg)
+    {
+        .key = http_decode_url(enckey, true),
+        .value = http_decode_url(encvalue, true)
+    };
+
+    if (!a.key)
+    {
+        fprintf(stderr, "%s: http_decode_url key failed\n", __func__);
+        goto end;
+    }
+    else if (!a.value)
+    {
+        fprintf(stderr, "%s: http_decode_url value failed\n", __func__);
         goto end;
     }
     else if (!(args = realloc(c->args, (c->n_args + 1) * sizeof *args)))
@@ -180,8 +193,6 @@ static int parse_arg(struct ctx *const c, const char *const arg,
         goto end;
     }
 
-    arg_decode(a.key);
-    arg_decode(a.value);
     args[c->n_args++] = a;
     c->args = args;
     ret = 0;
@@ -190,6 +201,8 @@ end:
     if (ret)
         arg_free(&a);
 
+    free(enckey);
+    free(encvalue);
     return ret;
 }
 
@@ -294,28 +307,28 @@ static int parse_resource(struct ctx *const c, const char *const enc_res)
     size_t reslen;
     char *trimmed_encres = NULL, *resource = NULL;
 
-    if (!(resource = http_decode_url(enc_res)))
-    {
-        fprintf(stderr, "%s: http_decode_url failed\n", __func__);
-        goto end;
-    }
-    else if ((error = parse_args(c, resource, &reslen)))
+    if ((error = parse_args(c, enc_res, &reslen)))
     {
         fprintf(stderr, "%s: parse_args failed\n", __func__);
         ret = error;
         goto end;
     }
-    else if (!(trimmed_encres = strndup(resource, reslen)))
+    else if (!(trimmed_encres = strndup(enc_res, reslen)))
     {
         fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
         goto end;
     }
+    else if (!(resource = http_decode_url(trimmed_encres, false)))
+    {
+        fprintf(stderr, "%s: http_decode_url failed\n", __func__);
+        goto end;
+    }
 
-    c->resource = trimmed_encres;
+    c->resource = resource;
     ret = 0;
 
 end:
-    free(resource);
+    free(trimmed_encres);
     return ret;
 }
 
@@ -1874,7 +1887,7 @@ failure:
     return NULL;
 }
 
-char *http_decode_url(const char *url)
+char *http_decode_url(const char *url, const bool spaces)
 {
     char *ret = NULL;
     size_t n = 0;
@@ -1892,7 +1905,12 @@ char *http_decode_url(const char *url)
 
         ret = r;
 
-        if (*url != '%')
+        if (spaces && *url == '+')
+        {
+            ret[n++] = ' ';
+            url++;
+        }
+        else if (*url != '%')
             ret[n++] = *url++;
         else if (*(url + 1) && *(url + 2))
         {
