@@ -496,6 +496,8 @@ static int rw_error(const int r, bool *const close)
     {
         switch (errno)
         {
+            case EPIPE:
+                /* Fall through. */
             case ECONNRESET:
                 *close = true;
                 return 1;

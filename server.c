@@ -167,7 +167,17 @@ static volatile sig_atomic_t do_exit;
 
 static void handle_signal(const int signum)
 {
-    do_exit = 1;
+    switch (signum)
+    {
+        case SIGINT:
+            /* Fall through. */
+        case SIGTERM:
+            do_exit = 1;
+            break;
+
+        default:
+            break;
+    }
 }
 
 struct server_client *server_poll(struct server *const s, bool *const io,
@@ -286,7 +296,13 @@ static int init_signals(void)
     }
     else if (sigaction(SIGTERM, &sa, NULL))
     {
-        fprintf(stderr, "%s: sigaction(2) SIGINT: %s\n",
+        fprintf(stderr, "%s: sigaction(2) SIGTERM: %s\n",
+            __func__, strerror(errno));
+        return -1;
+    }
+    else if (sigaction(SIGPIPE, &sa, NULL))
+    {
+        fprintf(stderr, "%s: sigaction(2) SIGPIPE: %s\n",
             __func__, strerror(errno));
         return -1;
     }
