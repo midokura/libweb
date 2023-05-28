@@ -7,6 +7,8 @@ CFLAGS = $(O) $(CDEFS) -g -Wall -Idynstr/include -MD -MF $(@:.o=.d)
 LIBS = -lcjson -lssl -lm -lcrypto
 LDFLAGS = $(LIBS)
 DEPS = $(OBJECTS:.o=.d)
+DYNSTR = dynstr/libdynstr.a
+DYNSTR_FLAGS = -Ldynstr -ldynstr
 OBJECTS = \
 	auth.o \
 	base64.o \
@@ -18,15 +20,17 @@ OBJECTS = \
 	jwt.o \
 	main.o \
 	page.o \
-	server.o \
-	dynstr/dynstr.o
+	server.o
 
 all: $(PROJECT)
 
 clean:
 	rm -f $(OBJECTS) $(DEPS)
 
-$(PROJECT): $(OBJECTS)
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+$(PROJECT): $(OBJECTS) $(DYNSTR)
+	$(CC) $(OBJECTS) $(LDFLAGS) $(DYNSTR_FLAGS) -o $@
+
+$(DYNSTR):
+	+cd dynstr && $(MAKE)
 
 -include $(DEPS)
