@@ -20,7 +20,8 @@ OBJECTS = \
 	jwt.o \
 	main.o \
 	page.o \
-	server.o
+	server.o \
+	wildcard_cmp.o \
 
 all: $(PROJECT)
 
