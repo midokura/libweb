@@ -58,7 +58,7 @@ static int on_payload(const struct http_payload *const p,
     {
         const struct elem *const e = &h->elem[i];
 
-        if (e->op == p->op && !wildcard_cmp(p->resource, e->url))
+        if (e->op == p->op && !wildcard_cmp(p->resource, e->url, true))
             return e->f(p, r, e->user);
     }
 
