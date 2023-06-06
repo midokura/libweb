@@ -37,15 +37,11 @@ int wildcard_cmp(const char *s, const char *p, const bool casecmp)
             if (!cmp(wca, sa))
             {
                 p = wc + 1;
-                s += n;
             }
             else if (next == '*')
                 p++;
             else
-            {
                 s++;
-                p += n;
-            }
         }
     }
 
