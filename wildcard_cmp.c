@@ -6,6 +6,7 @@
 
 int wildcard_cmp(const char *s, const char *p, const bool casecmp)
 {
+    const char *last = NULL;
     int (*const cmp)(const char *, const char *) =
         casecmp ? strcmp : strcasecmp;
     int (*const ncmp)(const char *, const char *, size_t) =
@@ -16,7 +17,18 @@ int wildcard_cmp(const char *s, const char *p, const bool casecmp)
         const char *const wc = strchr(p, '*');
 
         if (!wc)
-            return cmp(s, p);
+        {
+            const int r = cmp(s, p);
+
+            if (r && last)
+            {
+                p = last;
+                s += strlen(p);
+                continue;
+            }
+            else
+                return r;
+        }
 
         const size_t n = wc - p;
 
@@ -25,9 +37,15 @@ int wildcard_cmp(const char *s, const char *p, const bool casecmp)
             const int r = ncmp(s, p, n);
 
             if (r)
-                return r;
+            {
+                if (last)
+                    p = last;
+                else
+                    return r;
+            }
+            else
+                p += n;
 
-            p += n;
             s += n;
         }
         else
@@ -36,6 +54,7 @@ int wildcard_cmp(const char *s, const char *p, const bool casecmp)
 
             if (!cmp(wca, sa))
             {
+                last = p;
                 p = wc + 1;
             }
             else if (next == '*')
