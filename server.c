@@ -22,9 +22,8 @@ struct server
     {
         int fd;
         bool write;
+        struct server_client *prev, *next;
     } *c;
-
-    size_t n;
 };
 
 int server_close(struct server *const s)
@@ -44,13 +43,11 @@ int server_client_close(struct server *const s, struct server_client *const c)
 {
     int ret = 0;
 
-    for (size_t i = 0; i < s->n; i++)
+    for (struct server_client *ref = s->c; ref; ref = ref->next)
     {
-        struct server_client *const ref = &s->c[i];
-
         if (c == ref)
         {
-            const size_t n = s->n - 1;
+            struct server_client *const next = ref->next;
 
             if ((ret = close(c->fd)))
             {
@@ -58,28 +55,15 @@ int server_client_close(struct server *const s, struct server_client *const c)
                     __func__, strerror(errno));
                 return -1;
             }
-            else if (n)
-            {
-                memcpy(ref, ref + 1, (s->n - i - 1) * sizeof *ref);
-
-                struct server_client *const c = realloc(s->c, n * sizeof *s->c);
-
-                if (!c)
-                {
-                    fprintf(stderr, "%s: realloc(3): %s\n",
-                        __func__, strerror(errno));
-                    return -1;
-                }
-
-                s->c = c;
-            }
+            else if (ref->prev)
+                ref->prev->next = next;
             else
-            {
-                free(s->c);
-                s->c = NULL;
-            }
+                s->c = next;
 
-            s->n = n;
+            if (next)
+                next->prev = ref->prev;
+
+            free(ref);
             break;
         }
     }
@@ -136,24 +120,30 @@ static struct server_client *alloc_client(struct server *const s)
         return NULL;
     }
 
-    const size_t n = s->n + 1;
-    struct server_client *const clients = realloc(s->c, n * sizeof *s->c);
+    struct server_client *const c = malloc(sizeof *c);
 
-    if (!clients)
+    if (!c)
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         return NULL;
     }
-
-    struct server_client *const c = &clients[s->n];
 
     *c = (const struct server_client)
     {
         .fd = fd
     };
 
-    s->c = clients;
-    s->n = n;
+    if (!s->c)
+        s->c = c;
+    else
+        for (struct server_client *ref = s->c; ref; ref = ref->next)
+            if (!ref->next)
+            {
+                ref->next = c;
+                c->prev = ref;
+                break;
+            }
+
     return c;
 }
 
@@ -180,11 +170,22 @@ static void handle_signal(const int signum)
     }
 }
 
+static size_t get_clients(const struct server *const s)
+{
+    size_t ret = 0;
+
+    for (const struct server_client *c = s->c; c; c = c->next)
+        ret++;
+
+    return ret;
+}
+
 struct server_client *server_poll(struct server *const s, bool *const io,
     bool *const exit)
 {
     struct server_client *ret = NULL;
-    const nfds_t n = s->n + 1;
+    const size_t n_clients = get_clients(s);
+    const nfds_t n = n_clients + 1;
     struct pollfd *const fds = malloc(n * sizeof *fds);
 
     if (!fds)
@@ -202,11 +203,11 @@ struct server_client *server_poll(struct server *const s, bool *const io,
         .events = POLLIN
     };
 
-    for (size_t i = 0, j = 1; i < s->n; i++, j++)
+    for (struct {const struct server_client *c; size_t j;}
+        _ = {.c = s->c, .j = 1}; _.c; _.c = _.c->next, _.j++)
     {
-        struct pollfd *const p = &fds[j];
-        const struct server_client *const c = &s->c[i];
-        const int fd = c->fd;
+        struct pollfd *const p = &fds[_.j];
+        const int fd = _.c->fd;
 
         *p = (const struct pollfd)
         {
@@ -214,7 +215,7 @@ struct server_client *server_poll(struct server *const s, bool *const io,
             .events = POLLIN
         };
 
-        if (c->write)
+        if (_.c->write)
             p->events |= POLLOUT;
     }
 
@@ -251,22 +252,21 @@ again:
         fprintf(stderr, "%s: poll(2) returned zero\n", __func__);
         goto end;
     }
-
-    if (sfd->revents)
+    else if (sfd->revents)
     {
         ret = alloc_client(s);
         goto end;
     }
 
-    for (size_t i = 0, j = 1; i < s->n; i++, j++)
+    for (struct {struct server_client *c; size_t j;}
+        _ = {.c = s->c, .j = 1}; _.c; _.c = _.c->next, _.j++)
     {
-        const struct pollfd *const p = &fds[j];
-        struct server_client *const c = &s->c[i];
+        const struct pollfd *const p = &fds[_.j];
 
         if (p->revents)
         {
             *io = true;
-            ret = c;
+            ret = _.c;
             goto end;
         }
     }
