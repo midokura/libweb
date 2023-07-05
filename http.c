@@ -259,8 +259,10 @@ static int parse_args(struct ctx *const c, const char *const res,
     size_t *const reslen)
 {
     int error;
-    const char *const arg_start = strchr(res, '?'),
-        *const ad_arg = strchr(res, '&');
+    const char *const tmp_arg_start = strrchr(res, '?'),
+        *const arg_start = tmp_arg_start && *(tmp_arg_start + 1) ?
+            tmp_arg_start : NULL,
+        *const ad_arg = arg_start ? strchr(arg_start, '&') : NULL;
 
     if (!arg_start)
     {
