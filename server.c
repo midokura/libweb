@@ -124,7 +124,7 @@ static struct server_client *alloc_client(struct server *const s)
 
     if (!c)
     {
-        fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
+        fprintf(stderr, "%s: malloc(3): %s\n", __func__, strerror(errno));
         return NULL;
     }
 
