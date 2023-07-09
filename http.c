@@ -1303,7 +1303,7 @@ static int mf_header_cr_line(struct http_ctx *const h)
 
     if (ret)
         return ret;
-    else if (!strncmp(line, "Content-Disposition", n)
+    else if (!strncasecmp(line, "Content-Disposition", n)
         && (ret = set_content_disposition(h, value)))
         return ret;
 
