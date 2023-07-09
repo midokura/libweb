@@ -1228,6 +1228,14 @@ static int cd_fields(struct http_ctx *const h, struct form *const f,
                 fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
                 return -1;
             }
+            else if (!strcmp(f->filename, ".")
+                || !strcmp(f->filename, "..")
+                || strpbrk(f->filename, "/*"))
+            {
+                fprintf(stderr, "%s: invalid filename %s\n",
+                    __func__, f->filename);
+                return 1;
+            }
         }
     } while ((sep = strchr(sep, ';')));
 
