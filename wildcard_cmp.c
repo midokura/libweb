@@ -30,7 +30,8 @@ int wildcard_cmp(const char *s, const char *p, const bool casecmp)
                 return r;
         }
 
-        const size_t n = wc - p;
+        const size_t auxn = wc - p, rem = strlen(s),
+            n = auxn > rem ? rem : auxn;
 
         if (n)
         {
