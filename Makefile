@@ -21,6 +21,7 @@ OBJECTS = \
 	main.o \
 	page.o \
 	server.o \
+	style.o \
 	wildcard_cmp.o \
 
 all: $(PROJECT)
