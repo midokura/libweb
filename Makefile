@@ -5,7 +5,6 @@ O = -Og
 CDEFS = -D_FILE_OFFSET_BITS=64 # Required for large file support on 32-bit.
 CFLAGS = $(O) $(CDEFS) -g -Wall -Idynstr/include -MD -MF $(@:.o=.d)
 LIBS = -lcjson -lssl -lm -lcrypto
-LDFLAGS = $(LIBS)
 DEPS = $(OBJECTS:.o=.d)
 DYNSTR = dynstr/libdynstr.a
 DYNSTR_FLAGS = -Ldynstr -ldynstr
@@ -30,7 +29,7 @@ clean:
 	rm -f $(OBJECTS) $(DEPS)
 
 $(PROJECT): $(OBJECTS) $(DYNSTR)
-	$(CC) $(OBJECTS) $(LDFLAGS) $(DYNSTR_FLAGS) -o $@
+	$(CC) $(OBJECTS) $(LDFLAGS) $(LIBS) $(DYNSTR_FLAGS) -o $@
 
 $(DYNSTR):
 	+cd dynstr && $(MAKE)
