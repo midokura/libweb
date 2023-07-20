@@ -1,0 +1,3 @@
+[submodule "dynstr"]
+	path = dynstr
+	url = https://gitea.privatedns.org/xavi92/dynstr
