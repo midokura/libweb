@@ -1,9 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "handler.h"
-#include "http.h"
-#include "server.h"
-#include "wildcard_cmp.h"
+#include "slweb/handler.h"
+#include "slweb/http.h"
+#include "slweb/server.h"
+#include "slweb/wildcard_cmp.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
