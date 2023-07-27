@@ -162,8 +162,8 @@ struct html_node *html_node_add_child(struct html_node *const n,
     return child;
 }
 
-int serialize_node(struct dynstr *const d, const struct html_node *const n,
-    const unsigned level)
+static int serialize_node(struct dynstr *const d,
+    const struct html_node *const n, const unsigned level)
 {
     for (unsigned i = 0; i < level; i++)
         dynstr_append(d, "\t");
