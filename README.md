@@ -22,6 +22,7 @@ the operation (see example below).
 - Supports [`multiform/form-data`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)
 , which makes it useful to transfer large amounts of data, such as
 binary files.
+- [A library](include/slweb/html.h) to write HTML programmatically.
 
 ### TLS
 
@@ -72,12 +73,33 @@ them:
 $ make
 ```
 
+This would generate a static library, namely `libslweb.a`, on the project
+top-level directory. Applications can then call the top-level `Makefile` by
+the use of recursive `make`. For example, assuming `slweb` is contained on a
+subdirectory:
+
+```make
+slweb/libslweb.a:
+    +cd slweb && $(MAKE)
+```
+
 #### CMake
 
 ```sh
 $ mkdir build/
 $ cmake ..
 $ cmake --build .
+```
+
+A CMake target, also called `slweb`, is created. This makes it possible
+to integrate `slweb` into CMake projects via `add_subdirectory` and
+`target_link_libraries`. For example:
+
+```cmake
+project(example)
+add_executable(${PROJECT_NAME} main.c)
+add_subdirectory(slweb)
+target_link_libraries(${PROJECT_NAME} PRIVATE slweb)
 ```
 
 ## Why this project?
