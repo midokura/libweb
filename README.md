@@ -38,7 +38,7 @@ risk for security bugs, **please do not run `slweb` as `root`**.
 ## Requirements
 
 - A POSIX environment.
-- [`dynstr`](https://gitea.privatedns.org/xavi92/dynstr)
+- [`dynstr`](https://gitea.privatedns.org/xavi/dynstr)
 (provided as a `git` submodule).
 - CMake (optional).
 
