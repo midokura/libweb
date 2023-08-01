@@ -1,13 +1,13 @@
-# slweb, a suckless web framework
+# slweb, a simple and lightweight web framework
 
-`slweb` is a simple and fast implementation of a web server, written in C99,
-that can be integrated into applications.
+`slweb` is a simple and lightweight implementation of a web server, written in
+C99 plus POSIX.1-2008 extensions, that can be integrated into applications.
 
 ## Disclaimer
 
-While `slweb` might not share some of the philosophical views from the
-[suckless project](https://suckless.org), it still strives towards minimalism,
-simplicity and efficiency.
+Intentionally, `slweb` does not share some of the philosophical views from the
+[suckless project](https://suckless.org). However, it still strives towards
+portability, minimalism, simplicity and efficiency.
 
 ## Features
 
@@ -140,7 +140,7 @@ essential for `slcl`.
 ## License
 
 ```
-slweb, a suckless web framework.
+slweb, a simple and lightweight web framework.
 Copyright (C) 2023  Xavier Del Campo Romero
 
 This program is free software: you can redistribute it and/or modify
