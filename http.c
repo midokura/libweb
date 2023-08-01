@@ -336,7 +336,7 @@ end:
 
 static int start_line(struct http_ctx *const h)
 {
-    const char *const line = (const char *)h->line;
+    const char *const line = h->line;
 
     if (!*line)
     {
