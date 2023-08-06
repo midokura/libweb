@@ -103,6 +103,25 @@ add_subdirectory(slweb)
 target_link_libraries(${PROJECT_NAME} PRIVATE slweb)
 ```
 
+### Examples
+
+[A directory](examples) with examples shows how `slweb` can be used by
+applications. These can be built from the top-level directory with:
+
+```sh
+$ make examples
+```
+
+In the case of CMake builds, examples are built by default. This can be turned
+off by assigning `BUILD_EXAMPLES` to `OFF` or `0`:
+
+```sh
+$ mkdir build/
+$ cd build/
+$ cmake .. -DBUILD_EXAMPLES=OFF
+$ cmake --build .
+```
+
 ## Why this project?
 
 Originally, `slweb` was part of the

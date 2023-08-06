@@ -16,6 +16,12 @@ all: $(PROJECT)
 
 clean:
 	rm -f $(OBJECTS) $(DEPS)
+	+cd examples && $(MAKE) clean
+
+FORCE:
+
+examples: FORCE
+	+cd examples && $(MAKE)
 
 $(PROJECT): $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $(OBJECTS)
