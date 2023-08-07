@@ -40,8 +40,8 @@ static char *html_encode(const char *s)
             const char *str;
         } esc[] =
         {
-            {.c = '<', .str = "&gt;"},
-            {.c = '>', .str = "&lt;"},
+            {.c = '>', .str = "&gt;"},
+            {.c = '<', .str = "&lt;"},
             {.c = '&', .str = "&amp;"},
             {.c = '\"', .str = "&quot;"},
             {.c = '\'', .str = "&apos;"}
