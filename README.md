@@ -87,6 +87,7 @@ slweb/libslweb.a:
 
 ```sh
 $ mkdir build/
+$ cd build/
 $ cmake ..
 $ cmake --build .
 ```
