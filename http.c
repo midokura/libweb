@@ -905,25 +905,11 @@ static struct http_payload ctx_to_payload(const struct ctx *const c)
     };
 }
 
-static int payload_get(struct http_ctx *const h, const char *const line)
+static int process_payload(struct http_ctx *const h, const char *const line)
 {
     struct ctx *const c = &h->ctx;
     const struct http_payload p = ctx_to_payload(c);
     const int ret = h->cfg.payload(&p, &h->wctx.r, h->cfg.user);
-
-    ctx_free(c);
-
-    if (ret)
-        return ret;
-
-    return start_response(h);
-}
-
-static int payload_post(struct http_ctx *const h, const char *const line)
-{
-    struct ctx *const c = &h->ctx;
-    const struct http_payload pl = ctx_to_payload(c);
-    const int ret = h->cfg.payload(&pl, &h->wctx.r, h->cfg.user);
 
     ctx_free(c);
 
@@ -1052,12 +1038,12 @@ static int header_cr_line(struct http_ctx *const h)
         switch (c->op)
         {
             case HTTP_OP_GET:
-                return payload_get(h, line);
+                return process_payload(h, line);
 
             case HTTP_OP_POST:
             {
                 if (!c->post.len)
-                    return payload_post(h, line);
+                    return process_payload(h, line);
                 else if (c->boundary)
                 {
                     const int res = check_length(h);
