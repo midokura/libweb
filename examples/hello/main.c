@@ -66,11 +66,27 @@ end:
     return ret;
 }
 
+static int on_length(const unsigned long long len,
+    const struct http_cookie *const c, struct http_response *const r,
+    void *const user)
+{
+    *r = (const struct http_response)
+    {
+        .status = HTTP_STATUS_FORBIDDEN
+    };
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
     int ret = EXIT_FAILURE;
     const short port = 8080;
-    const struct handler_cfg cfg = {0};
+    const struct handler_cfg cfg =
+    {
+        .length = on_length
+    };
+
     struct handler *const h = handler_alloc(&cfg);
     static const char *const urls[] = {"/", "/index.html"};
 
