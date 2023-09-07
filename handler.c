@@ -181,7 +181,7 @@ end:
     return ret;
 }
 
-int handler_listen(struct handler *const h, const short port)
+int handler_listen(struct handler *const h, const unsigned short port)
 {
     if (!(h->server = server_init(port)))
     {
