@@ -1050,6 +1050,13 @@ static int header_cr_line(struct http_ctx *const h)
 
                     if (res)
                     {
+                        if (res < 0)
+                        {
+                            fprintf(stderr, "%s: check_length failed\n",
+                                __func__);
+                            return res;
+                        }
+
                         h->wctx.close = true;
                         return start_response(h);
                     }
