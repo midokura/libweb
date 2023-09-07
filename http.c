@@ -644,7 +644,7 @@ static int write_body_file(struct http_ctx *const h, bool *const close)
     struct write_ctx *const w = &h->wctx;
     const struct http_response *const r = &w->r;
     const unsigned long long left = r->n - w->n;
-    char buf[1024];
+    char buf[BUFSIZ];
     const size_t rem = left > sizeof buf ? sizeof buf : left;
 
     if (!fread(buf, 1, rem, r->f))
