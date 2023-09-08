@@ -35,7 +35,7 @@ struct http_payload
 
             const struct http_post_file
             {
-                const char *tmpname, *filename;
+                const char *name, *tmpname, *filename;
             } *files;
         } post;
     } u;

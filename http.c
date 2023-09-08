@@ -1488,6 +1488,7 @@ static int apply_from_file(struct http_ctx *const h, struct form *const f)
 
     *pf = (const struct http_post_file)
     {
+        .name = f->name,
         .tmpname = f->tmpname,
         .filename = f->filename
     };
