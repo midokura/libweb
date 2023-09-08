@@ -75,10 +75,10 @@ struct http_ctx
 
                 off_t len, written;
                 char *boundary;
-                const char *dir;
-                size_t blen, nforms, nfiles;
+                size_t blen, nforms, nfiles, npairs;
                 int fd;
                 struct http_post_file *files;
+                struct http_post_pair *pairs;
 
                 struct form
                 {
@@ -435,6 +435,7 @@ static void ctx_free(struct ctx *const c)
         struct multiform *const m = &c->u.mf;
 
         free(m->files);
+        free(m->pairs);
         free(m->boundary);
 
         if (m->fd >= 0 && close(m->fd))
@@ -1338,9 +1339,10 @@ static int end_boundary_line(struct http_ctx *const h)
             .resource = c->resource,
             .u.post =
             {
-                .dir = m->dir,
                 .files = m->files,
-                .n = m->nfiles
+                .pairs = m->pairs,
+                .nfiles = m->nfiles,
+                .npairs = m->npairs
             }
         };
 
@@ -1495,26 +1497,52 @@ static int apply_from_file(struct http_ctx *const h, struct form *const f)
     return 0;
 }
 
+static bool name_exists(const struct multiform *const m,
+    const struct form *const f)
+{
+    for (size_t i = 0; i < m->npairs; i++)
+    {
+        const struct http_post_pair *const p = &m->pairs[i];
+
+        if (!strcmp(f->name, p->name))
+        {
+            fprintf(stderr, "%s: \"%s\" defined more than once\n",
+                f->name, __func__);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static int apply_from_mem(struct http_ctx *const h, struct form *const f)
 {
     struct multiform *const m = &h->ctx.u.mf;
+
+    if (name_exists(m, f))
+        return 1;
+
+    struct http_post_pair *pairs, *p;
+    const size_t n = m->npairs + 1;
 
     if (!(f->value = strndup(h->line, m->written)))
     {
         fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
         return -1;
     }
-    else if (!strcmp(f->name, "dir"))
+    else if (!(pairs = realloc(m->pairs, n * sizeof *m->pairs)))
     {
-        if (m->dir)
-        {
-            fprintf(stderr, "%s: \"dir\" defined more than once\n", __func__);
-            return 1;
-        }
-
-        m->dir = f->value;
+        fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
+        return -1;
     }
 
+    pairs[m->npairs++] = (const struct http_post_pair)
+    {
+        .name = f->name,
+        .value = f->value
+    };
+
+    m->pairs = pairs;
     return 0;
 }
 

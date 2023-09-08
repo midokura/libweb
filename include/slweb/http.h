@@ -26,8 +26,12 @@ struct http_payload
         {
             bool expect_continue;
             const void *data;
-            size_t n;
-            const char *dir;
+            size_t n, nfiles, npairs;
+
+            const struct http_post_pair
+            {
+                const char *name, *value;
+            } *pairs;
 
             const struct http_post_file
             {
