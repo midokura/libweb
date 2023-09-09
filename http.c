@@ -1716,7 +1716,7 @@ static int read_body_to_mem(struct http_ctx *const h, bool *const close)
     struct ctx *const c = &h->ctx;
     struct post *const p = &c->post;
 
-    if (p->read >= sizeof h->line)
+    if (p->read >= sizeof h->line - 1)
     {
         fprintf(stderr, "%s: exceeded maximum length\n", __func__);
         return 1;
@@ -1738,11 +1738,11 @@ static int read_body_to_mem(struct http_ctx *const h, bool *const close)
             .resource = c->resource,
             .u.post =
             {
-                .data = h->line,
-                .n = p->len
+                .data = h->line
             }
         };
 
+        h->line[p->len] = '\0';
         return send_payload(h, &pl);
     }
 
