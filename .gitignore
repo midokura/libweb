@@ -2,3 +2,4 @@
 *.a
 *.d
 examples/hello/hello
+examples/html/html
