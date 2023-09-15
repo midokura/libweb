@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13.5)
-option(BUILD_EXAMPLES ON)
+option(BUILD_EXAMPLES "Build examples" ON)
 project(slweb C)
 add_library(${PROJECT_NAME}
     handler.c
