@@ -1,0 +1,80 @@
+.TH HTML_NODE_SET_VALUE 3 2023-09-24 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_node_set_value \- set value to a HTML node
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+int html_node_set_value(struct html_node *\fIn\fP, const char *\fIval\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_node_set_value (3)
+function sets a value to a
+.I struct html_node
+object pointed to by
+.IR n ,
+previously returned by
+.IR html_node_alloc (3)
+or
+.IR html_node_add_child (3).
+.I val
+is a null-terminated string with the value to be assigned to the node.
+
+.I slweb
+allocates a copy of the null-terminated string defined by
+.IR val .
+
+As opposed to
+.IR html_node_set_value_unescaped (3),
+.IR html_node_set_value (3)
+escapes characters that could case syntax errors, such as
+.B <
+.BR "" ( "LESS-THAN SIGN" )
+being translated to
+.BR &lt; .
+
+.SH RETURN VALUE
+On success,
+.IR html_node_set_value (3)
+returns zero. On failure, a negative integer is returned.
+
+.SH EXAMPLE
+A
+.I struct html_node
+object with
+.B example
+as tag name and
+.B hello
+as its value and no attributes would be translated by the HTML
+serializer to:
+
+.PP
+.in +4n
+.EX
+<example>hello</example>
+.EE
+.in
+.PP
+
+.SH ERRORS
+No errors are defined.
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR html_node_free (3),
+.BR html_node_set_value_unescaped (3),
+.BR html_node_add_attr (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

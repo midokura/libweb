@@ -1,0 +1,55 @@
+.TH HTML_NODE_ADD_SIBLING 3 2023-09-25 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_node_add_sibling \- add sibling to a HTML node
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+void html_node_add_sibling(struct html_node *\fIn\fP, struct html_node *\fIsibling\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_node_add_sibling (3)
+function adds a sibling node, pointed to by
+.IR sibling ,
+to a
+.I struct html_node
+object, previously allocated by a call to
+.IR html_node_alloc (3)
+or
+.IR html_node_add_child (3),
+and pointed to by
+.IR n .
+
+.SH RETURN VALUE
+The
+.IR html_node_add_sibling (3)
+function always succeeds.
+
+.SH ERRORS
+No errors are defined.
+
+.SH NOTES
+This function is mostly meant for internal use. Library users should
+only need
+.IR html_node_add_child (3)
+to create tree structures. Nonetheless,
+.IR html_node_add_sibling (3)
+was still made public so as to cover possibly less common use cases.
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR html_node_add_child (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

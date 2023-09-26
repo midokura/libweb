@@ -1,0 +1,53 @@
+.TH HTTP_RESPONSE_ADD_HEADER 3 2023-09-07 0.1.0 "slweb Library Reference"
+
+.SH NAME
+http_response_add_header \- adds a HTTP/1.1 header to a response
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/http.h>
+.P
+int http_response_add_header(struct http_response *\fIr\fP, const char *\fIheader\fP, const char *\fIvalue\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR http_response_add_header ()
+function updates a
+.I "struct http_response"
+object pointed to by
+.IR r
+by adding a new HTTP response to it, defined by
+.I header
+and
+.IR value ,
+which are null-terminated strings defining the key
+and value for the HTTP header, respectively.
+
+.SH RETURN VALUE
+On success, zero is returned. If a fatal error ocurrs, a negative
+integer is returned, and
+.I errno
+might be set by the internal calls to
+.IR realloc (3)
+or
+.IR strdup (3).
+
+.SH ERRORS
+Refer to
+.IR realloc (3)
+and
+.IR strdup (3)
+for a list of possible errors.
+
+.SH SEE ALSO
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

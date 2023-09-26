@@ -1,0 +1,59 @@
+.TH HANDLER_ALLOC 3 2023-09-13 0.1.0 "slweb Library Reference"
+
+.SH NAME
+handler_alloc \- allocate a web server handler object
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/handler.h>
+.P
+struct handler *handler_alloc(const struct handler_cfg *\fIcfg\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR handler_alloc (3)
+function allocates a
+.I "struct handler"
+object, containing the required data by
+.I slweb
+to handle a web server. This object is meant to be consumed by
+other functions from
+.IR slweb_handler (7).
+.I cfg
+defines the initial configuration, whose structure is defined by
+.IR slweb_handler (7).
+
+.I "struct handler"
+is an opaque object internal to
+.I slweb
+and therefore is not accessible to callers.
+
+.SH RETURN VALUE
+On success, an opaque pointer to a
+.I struct handler
+object is returned. On error,
+a null pointer is returned, and
+.I errno
+might be set by the internal call to
+.IR malloc (3).
+
+.SH ERRORS
+Refer to
+.IR malloc (3)
+for a list of possible errors.
+
+.SH SEE ALSO
+.BR handler_free (3),
+.BR handler_add (3),
+.BR handler_listen (3),
+.BR slweb_handler (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

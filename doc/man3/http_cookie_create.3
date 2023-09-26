@@ -1,0 +1,68 @@
+.TH HTTP_COOKIE_CREATE 3 2023-09-07 0.1.0 "slweb Library Reference"
+
+.SH NAME
+http_cookie_create \- creates a HTTP/1.1 cookie
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/http.h>
+.P
+char *http_cookie_create(const char *\fIkey\fP, const char *\fIvalue\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR http_cookie_create ()
+function allocates a null-terminated string with a HTTP/1.1 cookie
+defined by
+.I key
+and
+.IR value ,
+which are null-terminated strings.
+
+.SH RETURN VALUE
+On success, a null-terminated string with the newly HTTP/1.1 cookie is
+returned. Otherwise, a null pointer is returned.
+
+.SH ERRORS
+No errors are defined.
+
+.SH EXAMPLE
+A successful call to
+.IR http_cookie_create (3)
+with
+.I ExampleValue
+as
+.I key
+and
+.I ExampleValue
+as
+.I value
+might return a null-terminated string such as the one below:
+
+.LP
+.in +4n
+.EX
+ExampleHeader=ExampleValue; HttpOnly; Expires Wed, 07 Sep 2023 00:00:00 GMT
+.EE
+.in
+
+.SH FUTURE DIRECTIONS
+
+.I slweb
+sets a 1-year expiration date for HTTP cookies due to arbitrary design
+limitations. Future versions of this library shall allow a custom
+expiration date as an additional parameter to
+.IR http_cookie_create (3).
+
+.SH SEE ALSO
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

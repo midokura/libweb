@@ -1,0 +1,48 @@
+.TH HTML_NODE_FREE 3 2023-09-16 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_node_free \- free a HTML node and its children
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+void html_node_free(struct html_node *\fIn\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_node_free (3)
+function frees the memory space pointed to by
+.IR n ,
+which must have been returned by a previous call to
+.IR html_node_alloc (3).
+Children nodes are freed recursively.
+
+.SH RETURN VALUE
+The
+.IR html_node_free ()
+function returns no value.
+
+.SH ERRORS
+No errors are defined.
+
+.SH NOTES
+Since
+.IR html_node_free (3)
+frees nodes recursively, library users must not attempt to call
+.IR html_node_free (3)
+for a child node.
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR slweb_html (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

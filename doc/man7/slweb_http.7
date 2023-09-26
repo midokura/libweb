@@ -1,0 +1,649 @@
+.TH SLWEB_HTTP 7 2023-09-15 0.1.0 "slweb Library Reference"
+
+.SH NAME
+slweb_http \- slweb HTTP connection handling and utilities
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/http.h>
+.fi
+
+.SH DESCRIPTION
+As one of its key features,
+\fIslweb\fR
+provides a HTTP/1.1-compatible server implementation that can be
+embedded into applications as a library. While not a complete HTTP/1.1
+server implementation, the following features are supported:
+
+.IP \(bu 2
+.BR GET .
+.IP \(bu 2
+.BR POST .
+.IP \(bu 2
+.IR multipart/form-data -encoded
+data. An optional payload size limit can be defined (see section
+.BR "HTTP server configuration" ).
+.IP \(bu 2
+Cookies.
+
+.SS Utility functions
+The functions listed below are meant for library users:
+
+.IP \(bu 2
+.IR http_response_add_header (3).
+.IP \(bu 2
+.IR http_cookie_create (3).
+.IP \(bu 2
+.IR http_encode_url (3).
+.IP \(bu 2
+.IR http_decode_url (3).
+
+.SS HTTP connection-related functions
+
+The functions listed below are meant for internal use by
+.IR slweb :
+
+.IP \(bu 2
+.IR http_alloc (3).
+.IP \(bu 2
+.IR http_free (3).
+.IP \(bu 2
+.IR http_update (3).
+
+However, this component alone does not provide a working web server.
+For example, a list of endpoints is required to define its behaviour,
+and
+.I struct http
+objects must be stored somewhere as long as the connections are active.
+.IR slweb_handler (7)
+is the component meant to provide the missing pieces that conform a
+working web server.
+
+.SS HTTP server configuration
+
+A HTTP server is contained into a
+.IR "struct http_ctx" ,
+and can be allocated by calling
+.IR http_alloc (3).
+This function requires a valid pointer to a
+.I "struct http_cfg"
+object. This flexible configuration allows the library to run on top of
+any reliable transport layer, including TCP.
+.I "struct http_cfg"
+is defined as:
+
+.PP
+.in +4n
+.EX
+struct http_cfg
+{
+    int (*\fIread\fP)(void *\fIbuf\fP, size_t \fIn\fP, void *\fIuser\fP);
+    int (*\fIwrite\fP)(const void *\fIbuf\fP, size_t \fIn\fP, void *\fIuser\fP);
+    int (*\fIpayload\fP)(const struct http_payload *\fIp\fP, struct http_response *\fIr\fP, void *\fIuser\fP);
+    int (*\fIlength\fP)(unsigned long long \fIlen\fP, const struct http_cookie *\fIc\fP, struct http_response *\fIr\fP, void *\fIuser\fP);
+    const char *\fItmpdir\fP;
+    void *\fIuser\fP;
+};
+.EE
+.in
+.PP
+
+All of the function pointers listed above define
+.I user
+as a parameter, an opaque pointer to user-defined data previously
+defined by member
+.I user
+(see definition below). Unless noted otherwise, all pointers must be
+valid.
+
+.I read
+is a function pointer to a
+.IR read (2)-like
+function that must read up to
+.I n
+bytes
+from the client into a buffer pointed to by
+.IR buf .
+The function pointed to by
+.I read
+returns the number of bytes that could be read from the client,
+which could be from zero up to
+.IR n .
+On error, a negative integer is returned.
+
+.I write
+is a function pointer to a
+.IR write (2)-like
+function that must write up to
+.I n
+bytes
+to the client from a buffer pointed to by
+.IR buf .
+It returns the number of bytes that could be written to the client,
+which could be from zero to
+.IR n .
+On error, a negative integer is returned.
+
+.I payload
+is a function pointer called by
+.I slweb
+when a new HTTP request has been received.
+.I p
+is a read-only pointer to a
+.I "struct http_payload"
+object, which describes the HTTP request (see section
+.BR "HTTP payload" ).
+.I r
+is a pointer to a
+.I "struct http_response"
+object that must be initialized by the function pointed to by
+.IR payload ,
+which includes the HTTP response parameters to be returned to the
+client.
+The function pointed to by
+.I read
+returns the number of bytes that could be read from the client,
+which could be from zero to
+.IR n .
+This function returns zero on success. On error, a negative integer is
+returned.
+
+.I length
+is a function pointer called by
+.I slweb
+when an incoming HTTP request from a client requires to store one or
+more files on the server, encoded as
+.IR multipart/form-data .
+.I len
+defines the length of the
+.IR multipart/form-data
+(see section
+.BR "Content-Length design limitations for multipart/form-data" ).
+.I c
+is a read-only pointer to a
+.I "struct http_cookie"
+object, containing at most
+.B one
+(see section
+.BR "Limitations on the number of HTTP cookies" )
+HTTP cookie. If no cookies are defined, its members shall contain null
+pointers.
+.I r
+is a pointer to a
+.I "struct http_response"
+object that must be initialized by the function pointed to by
+.I payload
+only when the function returns a positive integer.
+This function returns zero on success, a negative integer in case
+of a fatal error or a positive integer in case of a non-fatal error
+caused by a malformed request, or to indicate a lack of support for
+this feature. When a positive integer is returned, the connection
+against the client shall be closed.
+
+.I tmpdir
+is a null-terminated string defining the path to a directory where
+files uploaded by clients shall be stored temporarily.
+.I tmpdir
+can be a null pointer if this feature is not supported by the
+application.
+
+.I user
+is an opaque pointer to a user-defined object that shall be passed to
+other function pointers defined by
+.IR "struct http_cfg" .
+.I user
+can be a null pointer.
+
+.SS HTTP payload
+
+When a client submits a request to the server,
+.I slweb
+prepares a high-level data structure, called
+.IR "struct http_payload" ,
+and passes it to the function pointer defined by
+.I "struct http_cfg"
+member
+.IR payload .
+.I "struct http_payload"
+is defined as:
+
+.PP
+.in +4n
+.EX
+struct http_payload
+{
+    enum http_op \fIop\fP;
+    const char *\fIresource\fP;
+    struct http_cookie \fIcookie\fP;
+
+    union
+    {
+        struct http_post \fIpost\fP;
+    } \fIu\fP;
+
+    const struct http_arg *\fIargs\fP;
+    size_t \fIn_args\fP;
+};
+.EE
+.in
+.PP
+
+.I op
+describes the HTTP/1.1 operation. See the definition for
+.I "enum http_op"
+for an exhaustive list of supported operations.
+
+.I resource
+describes which resource is being requested by the client. For example:
+.IR /index.html .
+
+.I cookie
+contains at most
+.B one
+HTTP cookie, defined as a key-value pair. Its members shall be null
+pointers if no cookie is present. Also, see section
+.BR "Limitations on the number of HTTP cookies" .
+
+.I u
+defines a tagged union with operation-specific data. For example,
+.I post
+refers to data sent by a client on a
+.B POST
+request (see section
+.BR "HTTP POST payload" ).
+Also, see section
+.BR "Future supported HTTP/1.1 operations" .
+
+.I args
+defines a list of key-value pairs containing URL parameters. Its length
+is defined by
+.IR n_args .
+
+.SS HTTP POST payload
+
+As opposed to payload-less HTTP/1.1 operations, such as
+.BR GET ,
+.B POST
+operations might or might not include payload data. Moreover, such
+payload can be encoded in two different ways, which
+.I slcl
+handles differently:
+
+.IP \(bu 2
+.IR application/x-www-form-urlencoded :
+suggested for smaller payloads.
+.I slweb
+shall store the payload in memory, limiting its maximum size to
+.BR "7999 octets" .
+
+.IP \(bu 2
+.IR multipart/form-data :
+suggested for larger and/or binary payloads.
+.I slweb
+shall store each non-file name-value pair in memory, limiting the value
+length to
+.BR "8000 octets" .
+On the other hand,
+.I slweb
+shall store each file into the temporary directory defined by
+.I struct http_cfg
+member
+.IR tmpdir .
+
+This information is contained into a
+.B "struct http_post"
+object, defined as:
+
+.PP
+.in +4n
+.EX
+struct http_post
+{
+    bool \fIexpect_continue\fP;
+    const char *\fIdata\fP;
+    size_t \fInfiles\fP, \fInpairs\fP;
+
+    const struct http_post_pair
+    {
+        const char *\fIname\fP, *\fIvalue\fP;
+    } *\fIpairs\fP;
+
+    const struct http_post_file
+    {
+        const char *\fIname\fP, *\fItmpname\fP, *\fIfilename\fP;
+    } *\fIfiles\fP;
+};
+.EE
+.in
+.PP
+
+.I expect_continue
+shall be set to
+.I true
+if an
+.B "Expect: 100-continue"
+HTTP header is received,
+.I false
+otherwise (see
+section
+.B Handling of 100-continue requests
+in
+.BR BUGS ).
+
+When
+.IR application/x-www-form-urlencoded -data
+is included,
+.I data
+shall contain a null-terminated string with the user payload. Data must
+be decoded by applications (see section
+.BR "Handling application/x-www-form-urlencoded data" ).
+Otherwise,
+.I data
+shall be a null pointer.
+
+In the case of
+.IR multipart/form-data ,
+.I files
+shall contain a list of files that were uploaded by the client, each
+one stored by the server to a temporary file, defined by
+.IR tmpname .
+The final name for the uploaded file is defined by
+.IR filename .
+The key
+.B name
+used for each requested file is defined by
+.IR name .
+The length of this list is defined by
+.IR nfiles .
+If no files are defined,
+.I files
+shall be a null pointer.
+
+In the case of
+.IR multipart/form-data ,
+.I pairs
+shall contain a list of name-value pairs that were uploaded by the
+client, defined by
+.I name
+and
+.IR value ,
+respectively. The length of this list is defined by
+.IR npairs .
+If no name-value pairs are defined,
+.I pairs
+shall be a null pointer.
+
+.SS HTTP responses
+
+Some function pointers used by
+.I slweb
+require to initialize a
+.I "struct http_response"
+object that defines the response that must be sent to the client.
+This structure is defined as:
+
+.PP
+.in +4n
+.EX
+struct http_response
+{
+    enum http_status \fIstatus\fP;
+
+    struct http_header
+    {
+        char *\fIheader\fP, *\fIvalue\fP;
+    } *\fIheaders\fP;
+
+    union
+    {
+        const void *\fIro\fP;
+        void *\fIrw\fP;
+    } \fIbuf\fP;
+
+    FILE *\fIf\fP;
+    unsigned long long \fIn\fP;
+    size_t \fIn_headers\fP;
+    void (*\fIfree\fP)(void *);
+};
+.EE
+.in
+.PP
+
+.I status
+is the response code to be returned to the client. A list of possible
+values is defined by
+.IR "enum http_status" .
+
+.I headers
+is a pointer to an array of
+.I "struct http_header"
+whose length is defined by
+.IR n_headers ,
+containing the HTTP headers to be included into the response. Note that
+.I headers
+is not meant to be modified directly by library users. Instead, the
+.IR http_response_add_header (3)
+utility function shall update the
+.I "struct http_response"
+object accordingly.
+
+.I buf
+is a union containing two possible values, with minor semantic
+differences:
+
+.I ro
+is a read-only opaque pointer to a buffer in memory, whose length is
+defined by
+.I n
+(see definition below).
+.I slweb
+shall select
+.I ro
+as the output payload if both
+.I f
+and
+.I free
+are null pointers, and
+.I n
+is non-zero.
+
+.I rw
+is an opaque pointer to a buffer in memory, whose length is defined by
+.I n
+(see definition below).
+.I slweb
+shall select
+.I rw
+as the output payload if both
+.I f
+is a null pointer and
+.I free
+is a valid pointer to a function that frees the memory used by
+.IR rw ,
+and
+.I n
+is non-zero.
+
+.I f
+is a
+.I FILE
+pointer opened for reading that defines the payload to be sent to the
+client, whose length is defined by
+.IR n .
+.I slweb
+shall select
+.I f
+as the output payload if
+.IR ro ,
+.I rw
+and
+.I free
+are null pointers, and
+.I n
+is non-zero.
+
+.I n
+is the length of the output payload, which can be either a buffer in
+memory (see definitions for
+.I ro
+and
+.IR rw )
+or a file (see definition for
+.IR f ).
+If
+.I n
+equals zero, no payload shall be sent.
+
+.I n_headers
+defines the number of HTTP headers contained in the response. This
+field is not meant to be manipulated directly. Instead, the
+.IR http_response_add_header (3)
+utility function shall update the
+.I "struct http_response"
+object accordingly.
+
+.I free
+is a pointer to a function that frees the memory used by
+.I rw
+.B only if
+.I rw
+is a valid pointer. Otherwise,
+.I free
+must be a null pointer.
+
+.SS Transport Layer Security (TLS)
+By design,
+.I slweb
+does
+.BI not
+implement TLS (Transport Layer Security). It is assumed this should
+be provided by a reverse proxy instead, a kind of project that is
+usually maintained by a larger community than
+.I slweb
+and audited for security vulnerabilities.
+
+.SH NOTES
+.SS Comparing against other HTTP server implementations
+While it is well understood that other solutions provide fully-fledged
+server implementations as standalone executables,
+.I slweb
+strives to be as small and easy to use as possible, intentionally
+limiting its scope while covering a good range of use cases.
+
+.SS Content-Length design limitations for multipart/form-data
+HTTP/1.1 defines the Content-Length for a
+.I multipart/form-data
+.B POST
+request as the sum of:
+
+.IP \(bu 2
+The length of all files.
+.IP \(bu 2
+The length of all boundaries.
+.IP \(bu 2
+The length of all headers included on each part.
+.IP \(bu 2
+All separator tokens, such as
+.B LFCR
+or
+.BR -- .
+
+This means it is not possible for
+.I slweb
+to determine the number of files or their lengths in a HTTP request
+unless the whole request is read, which not might be possible for large
+requests. Therefore, the
+.B Content-Length
+is the only rough estimation
+.I slweb
+can rely on, and therefore is the value passed to the
+.I length
+function pointer in
+.IR "struct http_cfg" .
+
+.SH BUGS
+.SS Handling of 100-continue requests
+
+The handling of
+.B 100-continue
+requests is not done correctly:
+.I slweb
+calls the function pointed to by
+.I "struct http_cfg"
+member
+.I payload
+as soon as it encounters the
+.B Expected:
+header. However, a response should only be sent to the client once all
+headers are processed.
+
+.SH FUTURE DIRECTIONS
+.SS Limitations on the number of HTTP cookies
+So far,
+.I slweb
+shall only append at most
+.B one
+HTTP cookie to a
+.I "struct http_payload"
+object. This is due to arbitrary design limitations on the library.
+Future versions of this library shall replace the
+.I "struct http_cookie"
+object inside
+.I "struct http_payload"
+with a pointer to an array of
+.IR "struct http_cookie" ,
+plus a
+.I size_t
+object containing the number of HTTP cookies in the request.
+
+.SS Handling application/x-www-form-urlencoded data
+Due to historical reasons,
+.I slweb
+treated
+.IR application/x-www-form-urlencoded -data
+as a binary blob. While this was changed to a null-terminated string in
+order to allow applications to avoid unnecessary memory allocations,
+.I slweb
+still does not decode the data, instead forcing applications to do so.
+Future versions of this library shall replace
+.I "struct http_post"
+member
+.I data
+with an array of structures containing key-value pairs, so that
+applications no longer need to decode payload data by themselves.
+
+.SS Future supported HTTP/1.1 operations
+So far,
+.I struct http_payload
+defines
+.I u
+as a union that only holds one possible data type. While this might
+look counterintuitive, this is because
+.B POST
+is the only HTTP/1.1 operation
+.I slweb
+supports that requires to store a payload. However, future versions of
+this library might extend its support for other HTTP/1.1 operations
+that could require to store a payload, while keeping the memory
+footprint for
+.I struct http_payload
+small.
+
+.SH SEE ALSO
+.BR handler_alloc (3),
+.BR http_alloc (3),
+.BR http_free (3),
+.BR http_update (3),
+.BR http_response_add_header (3),
+.BR http_cookie_create (3),
+.BR http_encode_url (3),
+.BR http_decode_url (3).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

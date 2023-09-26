@@ -1,0 +1,75 @@
+.TH HTML_NODE_ALLOC 3 2023-09-15 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_node_alloc \- allocate a HTML node
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+struct html_node *html_node_alloc(const char *\fIelement\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_node_alloc (3)
+function allocates a
+.I "struct html_node"
+object, which represents a node in a HTML tree.
+.I element
+is the name of the HTML tag.
+
+.I "struct html_node"
+is an opaque object internal to
+.I slweb
+and therefore is not accessible to callers.
+
+.SH RETURN VALUE
+On success, an opaque pointer to a
+.I struct html_node
+object is returned. On error,
+a null pointer is returned, and
+.I errno
+might be set by the internal call to
+.IR malloc (3).
+
+.SH ERRORS
+Refer to
+.IR malloc (3)
+for a list of possible errors.
+
+.SH EXAMPLE
+A
+.I struct html_node
+object with
+.B example
+as
+.I element
+with no attributes or value would be translated by the HTML serializer
+to
+.BR <example/> .
+
+.SH NOTES
+Typically,
+.IR html_node_alloc (3)
+is used to allocate the root node, whereas children can be appended to
+it via
+.IR html_node_add_child (3).
+
+.SH SEE ALSO
+.BR html_node_free (3),
+.BR html_node_set_value (3),
+.BR html_node_set_value_unescaped (3),
+.BR html_node_add_attr (3),
+.BR html_node_add_child (3),
+.BR html_node_add_sibling (3),
+.BR slweb_html (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

@@ -1,0 +1,38 @@
+.TH HTTP_ENCODE_URL 3 2023-09-07 0.1.0 "slweb Library Reference"
+
+.SH NAME
+http_encode_url \- allocates a percent-encoded null-terminated string
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/http.h>
+.P
+char *http_encode_url(const char *\fIurl\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR http_encode_url ()
+function encodes the null-terminated string given by
+.I url
+using percent-encoding as defined by RFC 3986.
+
+.SH RETURN VALUE
+On success, a valid pointer to a percent-encoded, null-terminated
+string is returned. On failure, a null pointer is returned.
+
+.SH ERRORS
+No errors are defined.
+
+.SH SEE ALSO
+.BR http_decode_url (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

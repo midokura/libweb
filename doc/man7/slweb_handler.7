@@ -1,0 +1,229 @@
+.TH SLWEB_HANDLER 7 2023-09-15 0.1.0 "slweb Library Reference"
+
+.SH NAME
+slweb_handler \- slweb high-level website configuration
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/handler.h>
+.fi
+
+.SH DESCRIPTION
+This component provides abstractions that allow library users to
+define the behaviour of a web server. Whereas
+.IR slweb_http (7)
+defines the HTTP/1.1 server implementation and provides a data type
+(namely
+.IR "struct http_ctx" )
+to handle an incoming connection,
+.IR slweb_handler (7):
+
+.IP \(bu 2
+Defines the list of endpoints and supported operations.
+.IP \(bu 2
+Defines the port
+.I slweb
+must listen to.
+.IP \(bu 2
+Keeps track of all
+.I struct http_ctx
+objects.
+
+.IR slweb_handler (7)
+provides the following functions:
+
+.IP \(bu 2
+.IR handler_alloc (3):
+allocates a
+.I "struct handler"
+object, consumed by other functions from this component.
+
+.IP \(bu 2
+.IR handler_free (3):
+frees the memory previously allocated by a call to
+.IR handler_alloc (3).
+
+.IP \(bu 2
+.IR handler_add (3):
+adds an endpoint to the server for a given HTTP/1.1
+operation.
+
+.IP \(bu 2
+.IR handler_listen (3):
+puts a
+.I "struct handler"
+object to initialize the server and handle connections in a loop.
+
+The
+.IR handler_alloc (3)
+function requires some initial configuration parameters, given by
+.IR "struct handler_cfg" ,
+defined as:
+
+.PP
+.in +4n
+.EX
+struct handler_cfg
+{
+    const char *\fItmpdir\fP;
+    int (*\fIlength\fP)(unsigned long long len, const struct http_cookie *c, struct http_response *r, void *user);
+    void *\fIuser\fP;
+};
+.EE
+.in
+.PP
+
+.IR tmpdir ,
+.I length
+and
+.I user
+are passed directly to the
+.I struct http_cfg
+object used to initialize a
+.I struct http_ctx
+object. See
+.IR slweb_http (7)
+for further reference about these members.
+
+However, a
+.I "struct handler"
+object as returned by
+.IR handler_alloc (3)
+alone is not enough. One or more callbacks must be set up to define the
+behaviour of the web server. Every callback must follow the signature
+below, as defined by
+.IR handler_fn :
+
+.PP
+.in +4n
+.EX
+typedef int (*\fIhandler_fn\fP)(const struct http_payload *\fIp\fP, struct http_response *\fIr\fP, void *\fIuser\fP);
+.EE
+.in
+.PP
+
+Please read
+.IR slweb_http (7)
+for further refence on
+.I "struct http_payload"
+and
+.IR "struct http_response" .
+.I user
+is a user-defined parameter previously defined by a call to
+.IR handler_add (3).
+
+.SH EXAMPLE
+
+The following source code shows how to set up a simple web server that
+listens to TCP port
+.I 8080
+and defines
+\fI/\fP
+and
+\fI/index.html\fP
+as its endpoints. For the sake of simplicity, a static response body is
+returned, instead of using
+.IR slweb_html (7)
+to generate HTML data. Please read
+.IR slweb_html (7)
+for further reference on how to generate dynamic content.
+
+.PP
+.in +4n
+.EX
+#include <slweb/handler.h>
+#include <slweb/http.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+static int hello(const struct http_payload *const pl,
+    struct http_response *const r, void *const user)
+{
+    static const char page[] =
+    {
+        "<html><body><p>Hello from slweb!</p></body></html>"
+    };
+
+    *r = (const struct http_response)
+    {
+        .status = HTTP_STATUS_OK,
+        .buf.ro = page,
+        .n = sizeof page - 1
+    };
+
+    if (http_response_add_header(r, "Content-Type", "text/html"))
+    {
+        fprintf(stderr, "%s: http_response_add_header failed\en", __func__);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int on_length(const unsigned long long len,
+    const struct http_cookie *const c, struct http_response *const r,
+    void *const user)
+{
+    *r = (const struct http_response)
+    {
+        .status = HTTP_STATUS_FORBIDDEN
+    };
+
+    return 1;
+}
+
+int main(int argc, char *argv[])
+{
+    int ret = EXIT_FAILURE;
+    const short port = 8080;
+    const struct handler_cfg cfg =
+    {
+        .length = on_length
+    };
+
+    struct handler *const h = handler_alloc(&cfg);
+    static const char *const urls[] = {"/", "/index.html"};
+
+    if (!h)
+    {
+        fprintf(stderr, "%s: handler_alloc failed\en", __func__);
+        goto end;
+    }
+
+    for (size_t i = 0; i < sizeof urls / sizeof *urls; i++)
+        if (handler_add(h, urls[i], HTTP_OP_GET, hello, NULL))
+        {
+            fprintf(stderr, "%s: handler_add failed\en", __func__);
+            goto end;
+        }
+
+    if (handler_listen(h, port))
+    {
+        fprintf(stderr, "%s: handler_listen failed\en", __func__);
+        goto end;
+    }
+
+    ret = EXIT_SUCCESS;
+
+end:
+    handler_free(h);
+    return ret;
+}
+.EE
+.in
+.PP
+
+.SH SEE ALSO
+.BR handler_alloc (3),
+.BR handler_add (3),
+.BR handler_free (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

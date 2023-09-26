@@ -1,0 +1,124 @@
+.TH HTML_NODE_ADD_CHILD 3 2023-09-25 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_node_add_child \- add child to a HTML node
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+struct html_node *html_node_add_child(struct html_node *\fIn\fP, const char *\fIelem\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_node_add_child (3)
+function allocates a child
+.I struct html_node
+object into another
+.I struct html_node
+object, previously allocated by a call to
+.IR html_node_alloc (3)
+or
+.IR html_node_add_child (3),
+and pointed to by
+.IR n .
+The tag name for the child node is defined by
+.IR elem .
+
+.SH RETURN VALUE
+On success,
+.IR html_node_add_child (3)
+returns zero. On failure, a negative integer is returned.
+
+.SH EXAMPLE
+
+The following example shall print a tree structure with a root node
+and one child node:
+
+.PP
+.in +4n
+.EX
+#include <dynstr.h>
+#include <slweb/html.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void)
+{
+    int ret = EXIT_FAILURE;
+    struct html_node *const root = html_node_alloc("root"), *child;
+    struct dynstr d;
+
+    dynstr_init(&d);
+
+    if (!root)
+    {
+        fprintf(stderr, "html_node_alloc failed\en");
+        goto end;
+    }
+    else if (!(child = html_node_add_child(root, "child")))
+    {
+        fprintf(stderr, "html_node_add_child failed\en");
+        goto end;
+    }
+    else if (html_serialize(root, &d))
+    {
+        fprintf(stderr, "html_serialize failed\en");
+        goto end;
+    }
+
+    printf("%s", d.str);
+    ret = EXIT_SUCCESS;
+
+end:
+    html_node_free(root);
+    dynstr_free(&d);
+    return ret;
+}
+.EE
+.in
+.PP
+
+The following results shall be written to the standard output:
+
+.PP
+.in +4n
+.EX
+<root>
+    <child/>
+</root>
+.EE
+.in
+.PP
+
+.SH ERRORS
+No errors are defined.
+
+.SH NOTES
+Adding a child to an existing
+.I struct html_node
+object is an atomic operation, which means no changes are applied to it
+if
+.IR html_node_add_child (3)
+fails.
+
+Internally,
+.I slweb
+calls
+.IR html_node_add_sibling (3)
+from a child node when a node already has one.
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR html_node_add_sibling (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

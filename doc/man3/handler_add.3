@@ -1,0 +1,88 @@
+.TH HANDLER_ADD 3 2023-09-13 0.1.0 "slweb Library Reference"
+
+.SH NAME
+handler_add \- add an endpoint to a web server handler object
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/handler.h>
+.P
+int handler_add(struct handler *\fIh\fP, const char *\fIurl\fP, enum http_op \fIop\fP, handler_fn \fIf\fP, void *\fIuser\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR handler_add ()
+function adds an endpoint to a
+.I struct handler
+object previously allocated by
+.IR handler_alloc (3),
+pointed to by
+.IR h .
+
+.I url
+is a null-terminated string that defines the target resource. The
+metacharacter
+.B *
+can be used to match any number of characters. For example,
+.B "/user/*/file"
+shall match resources such as
+.B /user/alice/file
+or
+.BR /user/bob/nested/file .
+
+.I op
+describes the HTTP/1.1 operation supported by the endpoint. See the
+definition for
+.I "enum http_op"
+for an exhaustive list of supported operations.
+
+.I f
+is a function pointer that shall be executed by
+.I slweb
+if an incoming request matches the resource and operation defined by
+.I url
+and
+.IR op ,
+respectively. See
+.IR slweb_handler (7)
+for the definition for
+.IR handler_fn .
+
+.I user
+is an opaque pointer to a user-defined object that shall be passed to
+the function pointed to by
+.IR f .
+.I user
+can be a null pointer.
+
+.SH RETURN VALUE
+On success, zero is returned. On error, a negative integer is returned,
+and
+.I errno
+might be set by the internal calls to
+.IR realloc (3)
+or
+.IR strdup (3).
+
+.SH ERRORS
+Refer to
+.IR malloc (3)
+and
+.IR strdup (3)
+for a list of possible errors.
+
+.SH SEE ALSO
+.BR handler_alloc (3),
+.BR handler_free (3),
+.BR handler_listen (3),
+.BR slweb_handler (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

@@ -1,0 +1,52 @@
+.TH HTML_SERIALIZE 3 2023-09-24 0.1.0 "slweb Library Reference"
+
+.SH NAME
+html_serialize \- add attribute to a HTML node
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.P
+int html_serialize(const struct html_node *\fIn\fP, struct dynstr *\fId\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR html_serialize (3)
+function takes a
+.I struct html_node
+object pointed to by
+.I n
+and serializes it as a HTML file, as well as all of its children nodes,
+into a null-terminated string.
+.I d
+is a
+.I struct dynstr
+object that must be previously initialized by a call to
+.IR dynstr_init (3),
+to which the null-terminated string shall be written.
+
+.SH RETURN VALUE
+On success,
+.IR html_serialize (3)
+returns zero. On failure, a negative integer is returned.
+
+.SH ERRORS
+No errors are defined.
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR html_node_free (3),
+.BR html_node_add_attr (3),
+.BR html_node_set_value (3),
+.BR html_node_set_value_unescaped (3),
+.BR slweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

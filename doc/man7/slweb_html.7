@@ -1,0 +1,178 @@
+.TH SLWEB_HTML 7 2023-09-15 0.1.0 "slweb Library Reference"
+
+.SH NAME
+slweb_html \- slweb HTML serializer
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <slweb/html.h>
+.fi
+
+.SH DESCRIPTION
+This component allows library users to serialize HTML text from a tree
+structure composed by one or more
+.I struct html_node
+objects.
+.IR slweb_html (7)
+provides the following functions:
+
+.IP \(bu 2
+.IR html_node_alloc (3)
+allocates a
+.I struct html_node
+object, consumed by other functions from this component.
+
+.IP \(bu 2
+.IR html_node_free (3)
+frees the memory from a
+.I struct html_node
+object previously allocated by a call to
+.IR html_node_alloc (3),
+plus all of the memory allocated by its children.
+
+.IP \(bu 2
+.IR html_node_set_value (3)
+sets the HTML value for a
+.I struct html_node
+object, escaping characters that could case syntax errors, such as
+.B <
+.BR "" ( "LESS-THAN SIGN" ).
+
+.IP \(bu 2
+.IR html_node_set_value_unescaped (3)
+sets the HTML value for a
+.I struct html_node
+object. As opposed to
+.IR html_node_set_value (3),
+no escaping is performed.
+
+.IP \(bu 2
+.IR html_node_add_attr (3)
+adds an attribute to a
+.I struct html_node
+object.
+
+.IP \(bu 2
+.IR html_node_add_child (3)
+allocates a children
+.I struct html_node
+object to another
+.I struct html_node
+object.
+
+.IP \(bu 2
+.IR html_node_add_sibling (3)
+adds a sibling
+.I struct html_node
+object to another
+.I struct html_node
+object.
+
+.IP \(bu 2
+.IR html_serialize (3)
+serializes a
+.I struct html_node
+object and all of its children into a null-terminated string with
+the HTML-serialized data.
+
+Typically, a root
+.I struct html_node
+object is allocated via
+.IR html_node_alloc (3),
+and child nodes are appended to it via
+.IR html_node_add_child (3).
+Optionally, values and/or attributes can be added to nodes via
+.IR html_node_set_value (3)
+and
+.IR html_node_add_attr (3),
+respectively.
+Finally,
+.IR html_node_free (3)
+shall free the memory used by the root node and all of its children.
+
+.SH EXAMPLE
+The example below is a minimal showcase of some of the features
+provided by
+.IR slweb_html (7),
+which prints a minimal HTML file to standard output:
+
+.PP
+.in +4n
+.EX
+#include <slweb/html.h>
+#include <dynstr.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+int main()
+{
+    int ret = EXIT_FAILURE;
+    struct dynstr d;
+    struct html_node *const html = html_node_alloc("html"), *body;
+    static const char text[] = "testing slweb";
+
+    dynstr_init(&d);
+
+    if (!html)
+    {
+        fprintf(stderr, "html_node_alloc_failed\en");
+        goto end;
+    }
+    else if (!(body = html_node_add_child(html, "body")))
+    {
+        fprintf(stderr, "html_node_add_child failed\en");
+        goto end;
+    }
+    else if (html_node_set_value(body, text))
+    {
+        fprintf(stderr, "html_node_set_value failed\en");
+        goto end;
+    }
+    else if (html_serialize(html, &d))
+    {
+        fprintf(stderr, "html_serialize failed\en");
+        goto end;
+    }
+
+    printf("%s", d.str);
+    ret = EXIT_SUCCESS;
+
+end:
+    dynstr_free(&d);
+    return ret;
+}
+.EE
+.in
+.PP
+
+This program should write the following data over standard output:
+
+.PP
+.in +4n
+.EX
+<html>
+        <body>testing slweb</body>
+</html>
+.EE
+.in
+.PP
+
+.SH SEE ALSO
+.BR html_node_alloc (3),
+.BR html_node_free (3),
+.BR html_node_set_value (3),
+.BR html_node_set_value_unescaped (3),
+.BR html_node_add_attr (3),
+.BR html_node_add_child (3),
+.BR html_node_add_sibling (3),
+.BR html_serialize (3),
+.BR slweb_html (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
