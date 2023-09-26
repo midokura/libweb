@@ -99,7 +99,6 @@ struct http_cfg
 
 struct http_ctx *http_alloc(const struct http_cfg *cfg);
 void http_free(struct http_ctx *h);
-/* Positive return value: user input error, negative: fatal error. */
 int http_update(struct http_ctx *h, bool *write, bool *close);
 int http_response_add_header(struct http_response *r, const char *header,
     const char *value);
