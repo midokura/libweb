@@ -18,6 +18,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/slweb.pc ${slweb_repl_pc})
 include(GNUInstallDirs)
 install(FILES ${CMAKE_BINARY_DIR}/slweb.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+add_subdirectory(doc)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

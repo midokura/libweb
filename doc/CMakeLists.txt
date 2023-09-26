@@ -1,0 +1,8 @@
+install(DIRECTORY man3
+    TYPE MAN
+    FILES_MATCHING PATTERN "*.3"
+)
+install(DIRECTORY man7
+    TYPE MAN
+    FILES_MATCHING PATTERN "*.7"
+)

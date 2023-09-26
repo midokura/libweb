@@ -24,6 +24,7 @@ install: all $(PC_DST)/slweb.pc
 	mkdir -p $(DST)
 	cp $(PROJECT) $(DST)
 	chmod 0755 $(DST)/$(PROJECT)
+	+cd doc && $(MAKE) PREFIX=$(PREFIX) install
 
 clean:
 	rm -f $(OBJECTS) $(DEPS)
