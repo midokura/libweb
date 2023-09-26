@@ -10,6 +10,8 @@ add_library(${PROJECT_NAME}
 add_subdirectory(dynstr)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC dynstr)
+install(TARGETS ${PROJECT_NAME})
+install(DIRECTORY include/slweb TYPE INCLUDE)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
