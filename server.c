@@ -1,4 +1,10 @@
+/* As of FreeBSD 13.2, sigaction(2) still conforms to IEEE Std
+ * 1003.1-1990 (POSIX.1), which did not define SA_RESTART.
+ * FreeBSD supports it as an extension, but then _POSIX_C_SOURCE must
+ * not be defined. */
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 200809L
+#endif
 
 #include "slweb/server.h"
 #include <fcntl.h>
