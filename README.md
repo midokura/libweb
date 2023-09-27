@@ -83,6 +83,15 @@ slweb/libslweb.a:
     +cd slweb && $(MAKE)
 ```
 
+Additionally, `slweb` can be installed using the `install` target. A
+custom prefix can be assigned via the `PREFIX` variable:
+
+```sh
+$ make PREFIX=$HOME/slweb-prefix install
+```
+
+By default, `PREFIX` is assigned to `/usr/local`.
+
 #### CMake
 
 ```sh
@@ -101,6 +110,14 @@ project(example)
 add_executable(${PROJECT_NAME} main.c)
 add_subdirectory(slweb)
 target_link_libraries(${PROJECT_NAME} PRIVATE slweb)
+```
+
+Additionally, `slweb` can be installed using the standard procedure
+in CMake. As usual, a custom prefix can be assigned via the
+`CMAKE_INSTALL_PREFIX` variable:
+
+```sh
+$ cmake --install build/ -DCMAKE_INSTALL_PREFIX=$HOME/slweb-prefix
 ```
 
 ### Examples
