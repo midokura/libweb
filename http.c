@@ -359,6 +359,8 @@ static int start_line(struct http_ctx *const h)
         c->op = HTTP_OP_GET;
     else if (!strncmp(line, "POST", n))
         c->op = HTTP_OP_POST;
+    else if (!strncmp(line, "HEAD", n))
+        c->op = HTTP_OP_HEAD;
     else
     {
         fprintf(stderr, "%s: unsupported HTTP op %.*s\n",
@@ -1039,6 +1041,8 @@ static int header_cr_line(struct http_ctx *const h)
         switch (c->op)
         {
             case HTTP_OP_GET:
+                /* Fall through. */
+            case HTTP_OP_HEAD:
                 return process_payload(h, line);
 
             case HTTP_OP_POST:

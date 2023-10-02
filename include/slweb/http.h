@@ -10,7 +10,8 @@ struct http_payload
     enum http_op
     {
         HTTP_OP_GET,
-        HTTP_OP_POST
+        HTTP_OP_POST,
+        HTTP_OP_HEAD
     } op;
 
     const char *resource;
