@@ -294,23 +294,27 @@ static int init_signals(void)
 
     sigemptyset(&sa.sa_mask);
 
-    if (sigaction(SIGINT, &sa, NULL))
+    static const struct signal
     {
-        fprintf(stderr, "%s: sigaction(2) SIGINT: %s\n",
-            __func__, strerror(errno));
-        return -1;
-    }
-    else if (sigaction(SIGTERM, &sa, NULL))
+        int signal;
+        const char *name;
+    } signals[] =
     {
-        fprintf(stderr, "%s: sigaction(2) SIGTERM: %s\n",
-            __func__, strerror(errno));
-        return -1;
-    }
-    else if (sigaction(SIGPIPE, &sa, NULL))
+        {.signal = SIGINT, .name = "SIGINT"},
+        {.signal = SIGTERM, .name = "SIGTERM"},
+        {.signal = SIGPIPE, .name = "SIGPIPE"}
+    };
+
+    for (size_t i = 0; i < sizeof signals / sizeof *signals; i++)
     {
-        fprintf(stderr, "%s: sigaction(2) SIGPIPE: %s\n",
-            __func__, strerror(errno));
-        return -1;
+        const struct signal *const s = &signals [i];
+
+        if (sigaction(s->signal, &sa, NULL))
+        {
+            fprintf(stderr, "%s: sigaction(2) %s: %s\n",
+                __func__, s->name, strerror(errno));
+            return -1;
+        }
     }
 
     return 0;
