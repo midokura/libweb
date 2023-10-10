@@ -1,36 +1,36 @@
-.TH SLWEB_HANDLER 7 2023-09-15 0.1.0 "slweb Library Reference"
+.TH LIBWEB_HANDLER 7 2023-09-15 0.1.0 "libweb Library Reference"
 
 .SH NAME
-slweb_handler \- slweb high-level website configuration
+libweb_handler \- libweb high-level website configuration
 
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/handler.h>
+#include <libweb/handler.h>
 .fi
 
 .SH DESCRIPTION
 This component provides abstractions that allow library users to
 define the behaviour of a web server. Whereas
-.IR slweb_http (7)
+.IR libweb_http (7)
 defines the HTTP/1.1 server implementation and provides a data type
 (namely
 .IR "struct http_ctx" )
 to handle an incoming connection,
-.IR slweb_handler (7):
+.IR libweb_handler (7):
 
 .IP \(bu 2
 Defines the list of endpoints and supported operations.
 .IP \(bu 2
 Defines the port
-.I slweb
+.I libweb
 must listen to.
 .IP \(bu 2
 Keeps track of all
 .I struct http_ctx
 objects.
 
-.IR slweb_handler (7)
+.IR libweb_handler (7)
 provides the following functions:
 
 .IP \(bu 2
@@ -83,7 +83,7 @@ are passed directly to the
 object used to initialize a
 .I struct http_ctx
 object. See
-.IR slweb_http (7)
+.IR libweb_http (7)
 for further reference about these members.
 
 However, a
@@ -104,7 +104,7 @@ typedef int (*\fIhandler_fn\fP)(const struct http_payload *\fIp\fP, struct http_
 .PP
 
 Please read
-.IR slweb_http (7)
+.IR libweb_http (7)
 for further refence on
 .I "struct http_payload"
 and
@@ -124,16 +124,16 @@ and
 \fI/index.html\fP
 as its endpoints. For the sake of simplicity, a static response body is
 returned, instead of using
-.IR slweb_html (7)
+.IR libweb_html (7)
 to generate HTML data. Please read
-.IR slweb_html (7)
+.IR libweb_html (7)
 for further reference on how to generate dynamic content.
 
 .PP
 .in +4n
 .EX
-#include <slweb/handler.h>
-#include <slweb/http.h>
+#include <libweb/handler.h>
+#include <libweb/http.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -142,7 +142,7 @@ static int hello(const struct http_payload *const pl,
 {
     static const char page[] =
     {
-        "<html><body><p>Hello from slweb!</p></body></html>"
+        "<html><body><p>Hello from libweb!</p></body></html>"
     };
 
     *r = (const struct http_response)
@@ -218,7 +218,7 @@ end:
 .BR handler_alloc (3),
 .BR handler_add (3),
 .BR handler_free (3),
-.BR slweb_http (7).
+.BR libweb_http (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

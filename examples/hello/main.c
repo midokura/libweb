@@ -1,7 +1,7 @@
 #include <dynstr.h>
-#include <slweb/handler.h>
-#include <slweb/html.h>
-#include <slweb/http.h>
+#include <libweb/handler.h>
+#include <libweb/html.h>
+#include <libweb/http.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +30,7 @@ static int hello(const struct http_payload *const pl,
         fprintf(stderr, "%s: html_node_add_child p failed\n", __func__);
         goto end;
     }
-    else if (html_node_set_value(p, "Hello from slweb!"))
+    else if (html_node_set_value(p, "Hello from libweb!"))
     {
         fprintf(stderr, "%s: html_node_set_value p failed\n", __func__);
         goto end;

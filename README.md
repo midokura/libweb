@@ -1,11 +1,11 @@
-# slweb, a simple and lightweight web framework
+# libweb, a simple and lightweight web framework
 
-`slweb` is a simple and lightweight implementation of a web server, written in
+`libweb` is a simple and lightweight implementation of a web server, written in
 C99 plus POSIX.1-2008 extensions, that can be integrated into applications.
 
 ## Disclaimer
 
-Intentionally, `slweb` does not share some of the philosophical views from the
+Intentionally, `libweb` does not share some of the philosophical views from the
 [suckless project](https://suckless.org). However, it still strives towards
 portability, minimalism, simplicity and efficiency.
 
@@ -22,18 +22,18 @@ the operation (see example below).
 - Supports [`multiform/form-data`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)
 , which makes it useful to transfer large amounts of data, such as
 binary files.
-- [A library](include/slweb/html.h) to write HTML programmatically.
+- [A library](include/libweb/html.h) to write HTML programmatically.
 
 ### TLS
 
-In order to maintain simplicity and reduce the risk for security bugs, `slweb`
+In order to maintain simplicity and reduce the risk for security bugs, `libweb`
 does **not** implement TLS support. Instead, this should be provided by a
 reverse proxy, such as [`caddy`](https://caddyserver.com/).
 
 ### Root permissions
 
-`slweb` does not require root permissions. So, in order to avoid the
-risk for security bugs, **please do not run `slweb` as `root`**.
+`libweb` does not require root permissions. So, in order to avoid the
+risk for security bugs, **please do not run `libweb` as `root`**.
 
 ## Requirements
 
@@ -59,13 +59,13 @@ sudo apt install cmake
 ## How to use
 ### Build
 
-Two build environments are provided for `slweb` - feel free to choose any of
+Two build environments are provided for `libweb` - feel free to choose any of
 them:
 
 - A mostly POSIX-compliant [`Makefile`](Makefile).
 - A [`CMakeLists.txt`](CMakeLists.txt).
 
-`slweb` can be built using the standard build process:
+`libweb` can be built using the standard build process:
 
 #### Make
 
@@ -73,21 +73,21 @@ them:
 $ make
 ```
 
-This would generate a static library, namely `libslweb.a`, on the project
+This would generate a static library, namely `libweb.a`, on the project
 top-level directory. Applications can then call the top-level `Makefile` by
-the use of recursive `make`. For example, assuming `slweb` is contained on a
+the use of recursive `make`. For example, assuming `libweb` is contained on a
 subdirectory:
 
 ```make
-slweb/libslweb.a:
-    +cd slweb && $(MAKE)
+libweb/libweb.a:
+    +cd libweb && $(MAKE)
 ```
 
-Additionally, `slweb` can be installed using the `install` target. A
+Additionally, `libweb` can be installed using the `install` target. A
 custom prefix can be assigned via the `PREFIX` variable:
 
 ```sh
-$ make PREFIX=$HOME/slweb-prefix install
+$ make PREFIX=$HOME/libweb-prefix install
 ```
 
 By default, `PREFIX` is assigned to `/usr/local`.
@@ -101,28 +101,28 @@ $ cmake ..
 $ cmake --build .
 ```
 
-A CMake target, also called `slweb`, is created. This makes it possible
-to integrate `slweb` into CMake projects via `add_subdirectory` and
+A CMake target, also called `libweb`, is created. This makes it possible
+to integrate `libweb` into CMake projects via `add_subdirectory` and
 `target_link_libraries`. For example:
 
 ```cmake
 project(example)
 add_executable(${PROJECT_NAME} main.c)
-add_subdirectory(slweb)
-target_link_libraries(${PROJECT_NAME} PRIVATE slweb)
+add_subdirectory(libweb)
+target_link_libraries(${PROJECT_NAME} PRIVATE libweb)
 ```
 
-Additionally, `slweb` can be installed using the standard procedure
+Additionally, `libweb` can be installed using the standard procedure
 in CMake. As usual, a custom prefix can be assigned via the
 `CMAKE_INSTALL_PREFIX` variable:
 
 ```sh
-$ cmake --install build/ -DCMAKE_INSTALL_PREFIX=$HOME/slweb-prefix
+$ cmake --install build/ -DCMAKE_INSTALL_PREFIX=$HOME/libweb-prefix
 ```
 
 ### Examples
 
-[A directory](examples) with examples shows how `slweb` can be used by
+[A directory](examples) with examples shows how `libweb` can be used by
 applications. These can be built from the top-level directory with:
 
 ```sh
@@ -141,7 +141,7 @@ $ cmake --build .
 
 ## Why this project?
 
-Originally, `slweb` was part of the
+Originally, `libweb` was part of the
 [`slcl`](https://gitea.privatedns.org/xavi92/slcl) project, a lightweight
 cloud solution also written in C99 plus POSIX extensions. However, there
 always was a clear separation between application logic and the underlying
@@ -170,14 +170,14 @@ interface called
     simple as possible for administrators.
 - The [`onion`](https://github.com/davidmoreno/onion) project, which
 does follow the HTTP library concept, was initially considered for
-`slcl`, but has a larger scope than `slweb`, and again simplicity was
+`slcl`, but has a larger scope than `libweb`, and again simplicity was
 essential for `slcl`.
 - And, after all, it was a good excuse to learn about HTTP/1.1.
 
 ## License
 
 ```
-slweb, a simple and lightweight web framework.
+libweb, a simple and lightweight web framework.
 Copyright (C) 2023  Xavier Del Campo Romero
 
 This program is free software: you can redistribute it and/or modify

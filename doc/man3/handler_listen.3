@@ -1,4 +1,4 @@
-.TH HANDLER_LISTEN 3 2023-09-14 0.1.0 "slweb Library Reference"
+.TH HANDLER_LISTEN 3 2023-09-14 0.1.0 "libweb Library Reference"
 
 .SH NAME
 handler_listen \- listen to and handle incoming connections on a web
@@ -7,7 +7,7 @@ server
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/handler.h>
+#include <libweb/handler.h>
 .P
 int handler_listen(struct handler *\fIh\fP, unsigned short \fIport\fP);
 .fi
@@ -46,7 +46,7 @@ No errors are defined.
 
 .SH FUTURE DIRECTIONS
 When no configured endpoint matches the incoming request,
-.I slweb
+.I libweb
 shall respond with a
 .B 404 Not Found
 HTTP status code with no payload. Since some library users might want
@@ -61,7 +61,7 @@ similarly to its member
 .BR handler_alloc (3),
 .BR handler_free (3),
 .BR handler_add (3),
-.BR slweb_handler (7),
+.BR libweb_handler (7),
 .BR signal (7).
 
 .SH COPYRIGHT

@@ -3,10 +3,10 @@
 PROJECT = hello
 DEPS = \
 	main.o
-SLWEB = ../../libslweb.a
+LIBWEB = ../../libweb.a
 DYNSTR = ../../dynstr/libdynstr.a
 CFLAGS = -I ../../include -I ../../dynstr/include
-SLWEB_FLAGS = -L ../../ -l slweb
+LIBWEB_FLAGS = -L ../../ -l libweb
 DYNSTR_FLAGS = -L ../../dynstr -l dynstr
 
 all: $(PROJECT)
@@ -16,10 +16,10 @@ clean:
 
 FORCE:
 
-$(PROJECT): $(DEPS) $(SLWEB) $(DYNSTR)
-	$(CC) $(LDFLAGS) $(DEPS) $(SLWEB_FLAGS) $(DYNSTR_FLAGS) -o $@
+$(PROJECT): $(DEPS) $(LIBWEB) $(DYNSTR)
+	$(CC) $(LDFLAGS) $(DEPS) $(LIBWEB_FLAGS) $(DYNSTR_FLAGS) -o $@
 
-$(SLWEB): FORCE
+$(LIBWEB): FORCE
 	+cd ../../ && $(MAKE)
 
 $(DYNSTR): FORCE

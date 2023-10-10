@@ -1,4 +1,4 @@
-.TH HTTP_COOKIE_CREATE 3 2023-09-07 0.1.0 "slweb Library Reference"
+.TH HTTP_COOKIE_CREATE 3 2023-09-07 0.1.0 "libweb Library Reference"
 
 .SH NAME
 http_cookie_create \- creates a HTTP/1.1 cookie
@@ -6,7 +6,7 @@ http_cookie_create \- creates a HTTP/1.1 cookie
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/http.h>
+#include <libweb/http.h>
 .P
 char *http_cookie_create(const char *\fIkey\fP, const char *\fIvalue\fP);
 .fi
@@ -50,14 +50,14 @@ ExampleHeader=ExampleValue; HttpOnly; Expires Wed, 07 Sep 2023 00:00:00 GMT
 
 .SH FUTURE DIRECTIONS
 
-.I slweb
+.I libweb
 sets a 1-year expiration date for HTTP cookies due to arbitrary design
 limitations. Future versions of this library shall allow a custom
 expiration date as an additional parameter to
 .IR http_cookie_create (3).
 
 .SH SEE ALSO
-.BR slweb_http (7).
+.BR libweb_http (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

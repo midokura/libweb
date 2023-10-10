@@ -1,4 +1,4 @@
-.TH HTTP_ALLOC 3 2023-09-06 0.1.0 "slweb Library Reference"
+.TH HTTP_ALLOC 3 2023-09-06 0.1.0 "libweb Library Reference"
 
 .SH NAME
 http_alloc \- allocate a HTTP context object
@@ -6,7 +6,7 @@ http_alloc \- allocate a HTTP context object
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/http.h>
+#include <libweb/http.h>
 .P
 struct http *http_alloc(const struct http_cfg *\fIcfg\fP);
 .fi
@@ -17,17 +17,17 @@ The
 function allocates a
 .I "struct http_ctx"
 object, containing the required data by
-.I slweb
+.I libweb
 to handle a HTTP connection. This object is meant to be consumed by
 other functions from
-.IR slweb .
+.IR libweb .
 .I cfg
 defines the configuration for the HTTP context, whose structure is defined by
-.IR slweb_http (7).
+.IR libweb_http (7).
 
 .I "struct http_ctx"
 is an opaque object internal to
-.I slweb
+.I libweb
 and therefore is not accessible to callers.
 
 .SH RETURN VALUE
@@ -46,12 +46,12 @@ for a list of possible errors.
 
 .SH NOTES
 This function is designed for internal use by
-\fIslweb\fR.
+\fIlibweb\fR.
 
 .SH SEE ALSO
 .BR http_free (3),
 .BR http_update (3),
-.BR slweb_http (7).
+.BR libweb_http (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

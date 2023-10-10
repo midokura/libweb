@@ -1,6 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "slweb/http.h"
+#include "libweb/http.h"
 #include <dynstr.h>
 #include <sys/types.h>
 #include <unistd.h>

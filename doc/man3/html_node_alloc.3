@@ -1,4 +1,4 @@
-.TH HTML_NODE_ALLOC 3 2023-09-15 0.1.0 "slweb Library Reference"
+.TH HTML_NODE_ALLOC 3 2023-09-15 0.1.0 "libweb Library Reference"
 
 .SH NAME
 html_node_alloc \- allocate a HTML node
@@ -6,7 +6,7 @@ html_node_alloc \- allocate a HTML node
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/html.h>
+#include <libweb/html.h>
 .P
 struct html_node *html_node_alloc(const char *\fIelement\fP);
 .fi
@@ -22,7 +22,7 @@ is the name of the HTML tag.
 
 .I "struct html_node"
 is an opaque object internal to
-.I slweb
+.I libweb
 and therefore is not accessible to callers.
 
 .SH RETURN VALUE
@@ -64,7 +64,7 @@ it via
 .BR html_node_add_attr (3),
 .BR html_node_add_child (3),
 .BR html_node_add_sibling (3),
-.BR slweb_html (7).
+.BR libweb_html (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

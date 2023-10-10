@@ -3,9 +3,9 @@
 PREFIX = /usr/local
 DST = $(PREFIX)/share/man/man7
 OBJECTS = \
-	$(DST)/slweb_handler.7 \
-	$(DST)/slweb_html.7 \
-	$(DST)/slweb_http.7
+	$(DST)/libweb_handler.7 \
+	$(DST)/libweb_html.7 \
+	$(DST)/libweb_http.7
 
 all:
 

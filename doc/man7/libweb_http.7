@@ -1,17 +1,17 @@
-.TH SLWEB_HTTP 7 2023-09-15 0.1.0 "slweb Library Reference"
+.TH LIBWEB_HTTP 7 2023-09-15 0.1.0 "libweb Library Reference"
 
 .SH NAME
-slweb_http \- slweb HTTP connection handling and utilities
+libweb_http \- libweb HTTP connection handling and utilities
 
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/http.h>
+#include <libweb/http.h>
 .fi
 
 .SH DESCRIPTION
 As one of its key features,
-\fIslweb\fR
+\fIlibweb\fR
 provides a HTTP/1.1-compatible server implementation that can be
 embedded into applications as a library. While not a complete HTTP/1.1
 server implementation, the following features are supported:
@@ -42,7 +42,7 @@ The functions listed below are meant for library users:
 .SS HTTP connection-related functions
 
 The functions listed below are meant for internal use by
-.IR slweb :
+.IR libweb :
 
 .IP \(bu 2
 .IR http_alloc (3).
@@ -56,7 +56,7 @@ For example, a list of endpoints is required to define its behaviour,
 and
 .I struct http
 objects must be stored somewhere as long as the connections are active.
-.IR slweb_handler (7)
+.IR libweb_handler (7)
 is the component meant to provide the missing pieces that conform a
 working web server.
 
@@ -127,7 +127,7 @@ On error, a negative integer is returned.
 
 .I payload
 is a function pointer called by
-.I slweb
+.I libweb
 when a new HTTP request has been received.
 .I p
 is a read-only pointer to a
@@ -151,7 +151,7 @@ returned.
 
 .I length
 is a function pointer called by
-.I slweb
+.I libweb
 when an incoming HTTP request from a client requires to store one or
 more files on the server, encoded as
 .IR multipart/form-data .
@@ -198,7 +198,7 @@ can be a null pointer.
 .SS HTTP payload
 
 When a client submits a request to the server,
-.I slweb
+.I libweb
 prepares a high-level data structure, called
 .IR "struct http_payload" ,
 and passes it to the function pointer defined by
@@ -273,19 +273,19 @@ handles differently:
 .IP \(bu 2
 .IR application/x-www-form-urlencoded :
 suggested for smaller payloads.
-.I slweb
+.I libweb
 shall store the payload in memory, limiting its maximum size to
 .BR "7999 octets" .
 
 .IP \(bu 2
 .IR multipart/form-data :
 suggested for larger and/or binary payloads.
-.I slweb
+.I libweb
 shall store each non-file name-value pair in memory, limiting the value
 length to
 .BR "8000 octets" .
 On the other hand,
-.I slweb
+.I libweb
 shall store each file into the temporary directory defined by
 .I struct http_cfg
 member
@@ -377,7 +377,7 @@ shall be a null pointer.
 .SS HTTP responses
 
 Some function pointers used by
-.I slweb
+.I libweb
 require to initialize a
 .I "struct http_response"
 object that defines the response that must be sent to the client.
@@ -437,7 +437,7 @@ is a read-only opaque pointer to a buffer in memory, whose length is
 defined by
 .I n
 (see definition below).
-.I slweb
+.I libweb
 shall select
 .I ro
 as the output payload if both
@@ -452,7 +452,7 @@ is non-zero.
 is an opaque pointer to a buffer in memory, whose length is defined by
 .I n
 (see definition below).
-.I slweb
+.I libweb
 shall select
 .I rw
 as the output payload if both
@@ -471,7 +471,7 @@ is a
 pointer opened for reading that defines the payload to be sent to the
 client, whose length is defined by
 .IR n .
-.I slweb
+.I libweb
 shall select
 .I f
 as the output payload if
@@ -514,20 +514,20 @@ must be a null pointer.
 
 .SS Transport Layer Security (TLS)
 By design,
-.I slweb
+.I libweb
 does
 .BI not
 implement TLS (Transport Layer Security). It is assumed this should
 be provided by a reverse proxy instead, a kind of project that is
 usually maintained by a larger community than
-.I slweb
+.I libweb
 and audited for security vulnerabilities.
 
 .SH NOTES
 .SS Comparing against other HTTP server implementations
 While it is well understood that other solutions provide fully-fledged
 server implementations as standalone executables,
-.I slweb
+.I libweb
 strives to be as small and easy to use as possible, intentionally
 limiting its scope while covering a good range of use cases.
 
@@ -550,13 +550,13 @@ or
 .BR -- .
 
 This means it is not possible for
-.I slweb
+.I libweb
 to determine the number of files or their lengths in a HTTP request
 unless the whole request is read, which not might be possible for large
 requests. Therefore, the
 .B Content-Length
 is the only rough estimation
-.I slweb
+.I libweb
 can rely on, and therefore is the value passed to the
 .I length
 function pointer in
@@ -568,7 +568,7 @@ function pointer in
 The handling of
 .B 100-continue
 requests is not done correctly:
-.I slweb
+.I libweb
 calls the function pointed to by
 .I "struct http_cfg"
 member
@@ -581,7 +581,7 @@ headers are processed.
 .SH FUTURE DIRECTIONS
 .SS Limitations on the number of HTTP cookies
 So far,
-.I slweb
+.I libweb
 shall only append at most
 .B one
 HTTP cookie to a
@@ -599,12 +599,12 @@ object containing the number of HTTP cookies in the request.
 
 .SS Handling application/x-www-form-urlencoded data
 Due to historical reasons,
-.I slweb
+.I libweb
 treated
 .IR application/x-www-form-urlencoded -data
 as a binary blob. While this was changed to a null-terminated string in
 order to allow applications to avoid unnecessary memory allocations,
-.I slweb
+.I libweb
 still does not decode the data, instead forcing applications to do so.
 Future versions of this library shall replace
 .I "struct http_post"
@@ -622,7 +622,7 @@ as a union that only holds one possible data type. While this might
 look counterintuitive, this is because
 .B POST
 is the only HTTP/1.1 operation
-.I slweb
+.I libweb
 supports that requires to store a payload. However, future versions of
 this library might extend its support for other HTTP/1.1 operations
 that could require to store a payload, while keeping the memory

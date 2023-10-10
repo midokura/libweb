@@ -1,6 +1,6 @@
 .POSIX:
 
-PROJECT = libslweb.a
+PROJECT = libweb.a
 PREFIX = /usr/local
 DST = $(PREFIX)/lib
 PC_DST = $(DST)/pkgconfig
@@ -17,10 +17,10 @@ OBJECTS = \
 
 all: $(PROJECT)
 
-install: all $(PC_DST)/slweb.pc
+install: all $(PC_DST)/libweb.pc
 	mkdir -p $(PREFIX)/include
-	cp -R include/slweb $(PREFIX)/include
-	chmod 0644 $(PREFIX)/include/slweb/*.h
+	cp -R include/libweb $(PREFIX)/include
+	chmod 0644 $(PREFIX)/include/libweb/*.h
 	mkdir -p $(DST)
 	cp $(PROJECT) $(DST)
 	chmod 0755 $(DST)/$(PROJECT)
@@ -38,7 +38,7 @@ examples: FORCE
 $(PROJECT): $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 
-$(PC_DST)/slweb.pc: slweb.pc
+$(PC_DST)/libweb.pc: libweb.pc
 	mkdir -p $(PC_DST)
 	sed -e 's,/usr/local,$(PREFIX),' $< > $@
 	chmod 0644 $@

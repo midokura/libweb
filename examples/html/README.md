@@ -20,6 +20,6 @@ should be written to the standard output:
         <head>
                 <meta charset="UTF-8"/>
         </head>
-        <body>testing slweb</body>
+        <body>testing libweb</body>
 </html>
 ```

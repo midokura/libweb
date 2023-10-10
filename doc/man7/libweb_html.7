@@ -1,12 +1,12 @@
-.TH SLWEB_HTML 7 2023-09-15 0.1.0 "slweb Library Reference"
+.TH LIBWEB_HTML 7 2023-09-15 0.1.0 "libweb Library Reference"
 
 .SH NAME
-slweb_html \- slweb HTML serializer
+libweb_html \- libweb HTML serializer
 
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/html.h>
+#include <libweb/html.h>
 .fi
 
 .SH DESCRIPTION
@@ -14,7 +14,7 @@ This component allows library users to serialize HTML text from a tree
 structure composed by one or more
 .I struct html_node
 objects.
-.IR slweb_html (7)
+.IR libweb_html (7)
 provides the following functions:
 
 .IP \(bu 2
@@ -94,13 +94,13 @@ shall free the memory used by the root node and all of its children.
 .SH EXAMPLE
 The example below is a minimal showcase of some of the features
 provided by
-.IR slweb_html (7),
+.IR libweb_html (7),
 which prints a minimal HTML file to standard output:
 
 .PP
 .in +4n
 .EX
-#include <slweb/html.h>
+#include <libweb/html.h>
 #include <dynstr.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -110,7 +110,7 @@ int main()
     int ret = EXIT_FAILURE;
     struct dynstr d;
     struct html_node *const html = html_node_alloc("html"), *body;
-    static const char text[] = "testing slweb";
+    static const char text[] = "testing libweb";
 
     dynstr_init(&d);
 
@@ -152,7 +152,7 @@ This program should write the following data over standard output:
 .in +4n
 .EX
 <html>
-        <body>testing slweb</body>
+        <body>testing libweb</body>
 </html>
 .EE
 .in
@@ -167,7 +167,7 @@ This program should write the following data over standard output:
 .BR html_node_add_child (3),
 .BR html_node_add_sibling (3),
 .BR html_serialize (3),
-.BR slweb_html (7).
+.BR libweb_html (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

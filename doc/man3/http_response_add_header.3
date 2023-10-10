@@ -1,4 +1,4 @@
-.TH HTTP_RESPONSE_ADD_HEADER 3 2023-09-07 0.1.0 "slweb Library Reference"
+.TH HTTP_RESPONSE_ADD_HEADER 3 2023-09-07 0.1.0 "libweb Library Reference"
 
 .SH NAME
 http_response_add_header \- adds a HTTP/1.1 header to a response
@@ -6,7 +6,7 @@ http_response_add_header \- adds a HTTP/1.1 header to a response
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/http.h>
+#include <libweb/http.h>
 .P
 int http_response_add_header(struct http_response *\fIr\fP, const char *\fIheader\fP, const char *\fIvalue\fP);
 .fi
@@ -42,7 +42,7 @@ and
 for a list of possible errors.
 
 .SH SEE ALSO
-.BR slweb_http (7).
+.BR libweb_http (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

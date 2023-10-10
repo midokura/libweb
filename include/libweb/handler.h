@@ -1,7 +1,7 @@
 #ifndef HANDLER_H
 #define HANDLER_H
 
-#include "slweb/http.h"
+#include "libweb/http.h"
 #include <stddef.h>
 
 typedef int (*handler_fn)(const struct http_payload *p,

@@ -1,4 +1,4 @@
-#include <slweb/html.h>
+#include <libweb/html.h>
 #include <dynstr.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,7 +9,7 @@ int main()
     struct dynstr d;
     struct html_node *const html = html_node_alloc("html"), *head,
         *meta, *body;
-    static const char text[] = "testing slweb";
+    static const char text[] = "testing libweb";
 
     dynstr_init(&d);
 

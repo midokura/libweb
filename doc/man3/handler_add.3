@@ -1,4 +1,4 @@
-.TH HANDLER_ADD 3 2023-09-13 0.1.0 "slweb Library Reference"
+.TH HANDLER_ADD 3 2023-09-13 0.1.0 "libweb Library Reference"
 
 .SH NAME
 handler_add \- add an endpoint to a web server handler object
@@ -6,7 +6,7 @@ handler_add \- add an endpoint to a web server handler object
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/handler.h>
+#include <libweb/handler.h>
 .P
 int handler_add(struct handler *\fIh\fP, const char *\fIurl\fP, enum http_op \fIop\fP, handler_fn \fIf\fP, void *\fIuser\fP);
 .fi
@@ -40,13 +40,13 @@ for an exhaustive list of supported operations.
 
 .I f
 is a function pointer that shall be executed by
-.I slweb
+.I libweb
 if an incoming request matches the resource and operation defined by
 .I url
 and
 .IR op ,
 respectively. See
-.IR slweb_handler (7)
+.IR libweb_handler (7)
 for the definition for
 .IR handler_fn .
 
@@ -77,7 +77,7 @@ for a list of possible errors.
 .BR handler_alloc (3),
 .BR handler_free (3),
 .BR handler_listen (3),
-.BR slweb_handler (7).
+.BR libweb_handler (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.

@@ -1,4 +1,4 @@
-.TH HTTP_UPDATE 3 2023-09-06 0.1.0 "slweb Library Reference"
+.TH HTTP_UPDATE 3 2023-09-06 0.1.0 "libweb Library Reference"
 
 .SH NAME
 http_update \- updates a HTTP context object
@@ -6,7 +6,7 @@ http_update \- updates a HTTP context object
 .SH SYNOPSIS
 .LP
 .nf
-#include <slweb/http.h>
+#include <libweb/http.h>
 .P
 int http_update(struct http_ctx *\fIh\fP, bool *\fIwrite\fP, bool *\fIclose\fP);
 .fi
@@ -60,12 +60,12 @@ No errors are defined.
 
 .SH NOTES
 This function is designed for internal use by
-.IR slweb .
+.IR libweb .
 
 .SH SEE ALSO
 .BR http_free (3),
 .BR http_update (3),
-.BR slweb_http (7).
+.BR libweb_http (7).
 
 .SH COPYRIGHT
 Copyright (C) 2023 Xavier Del Campo Romero.
