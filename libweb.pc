@@ -8,4 +8,4 @@ Url: https://gitea.privatedns.org/xavi/libweb
 Description: A simple and lightweight web framework
 Version: 0.1.0
 Cflags: -I${includedir}
-Libs: -L${libdir} -llibweb
+Libs: -L${libdir} -lweb
