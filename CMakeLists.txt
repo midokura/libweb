@@ -7,7 +7,14 @@ add_library(${PROJECT_NAME}
     http.c
     server.c
     wildcard_cmp.c)
-add_subdirectory(dynstr)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
+find_package(dynstr 0.1.0)
+
+if(NOT DYNSTR_FOUND)
+    message(STATUS "Using in-tree dynstr")
+    add_subdirectory(dynstr)
+endif()
+
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC dynstr)
 install(TARGETS ${PROJECT_NAME})
