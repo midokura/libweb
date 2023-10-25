@@ -16,7 +16,7 @@ datarootdir = $(prefix)/share
 mandir = $(datarootdir)/man
 libdir = $(exec_prefix)/lib
 pkgcfgdir = $(libdir)/pkgconfig
-O = -Og
+O = -O1
 CDEFS = -D_FILE_OFFSET_BITS=64 # Required for large file support on 32-bit.
 CFLAGS = $(O) $(CDEFS) -g -Iinclude -Idynstr/include -fPIC -MD -MF $(@:.o=.d)
 LDFLAGS = -shared
