@@ -6,7 +6,7 @@ DEPS = \
 LIBWEB = ../../libweb.a
 DYNSTR = ../../dynstr/libdynstr.a
 CFLAGS = -I ../../include -I ../../dynstr/include
-LIBWEB_FLAGS = -L ../../ -l libweb
+LIBWEB_FLAGS = -L ../../ -l web
 DYNSTR_FLAGS = -L ../../dynstr -l dynstr
 
 all: $(PROJECT)
