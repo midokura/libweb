@@ -1,17 +1,19 @@
 .POSIX:
 
-PREFIX = /usr/local
-DST = $(PREFIX)/share/man/man7
+prefix = /usr/local
+datarootdir = $(prefix)/share
+mandir = $(datarootdir)/man
+man7dir = $(mandir)/man7
 OBJECTS = \
-	$(DST)/libweb_handler.7 \
-	$(DST)/libweb_html.7 \
-	$(DST)/libweb_http.7
+	$(DESTDIR)$(man7dir)/libweb_handler.7 \
+	$(DESTDIR)$(man7dir)/libweb_html.7 \
+	$(DESTDIR)$(man7dir)/libweb_http.7
 
 all:
 
 install: $(OBJECTS)
 
-$(DST)/%.7: %.7
-	mkdir -p $(DST)
+$(DESTDIR)$(man7dir)/%.7: %.7
+	mkdir -p $(DESTDIR)$(man7dir)
 	cp $< $@
 	chmod 0644 $@
