@@ -1,5 +1,7 @@
 *.o
 *.a
 *.d
+*.so
+*.so.*
 examples/hello/hello
 examples/html/html
