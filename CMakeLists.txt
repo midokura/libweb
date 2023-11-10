@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.5)
 option(BUILD_EXAMPLES "Build examples" ON)
-project(web C VERSION 0.1.0)
+project(web LANGUAGES C VERSION 0.1.0)
 add_library(${PROJECT_NAME}
     handler.c
     html.c
