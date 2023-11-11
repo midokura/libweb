@@ -133,7 +133,7 @@ static int parse_arg(struct ctx *const c, const char *const arg,
     int ret = -1;
     struct http_arg a = {0}, *args = NULL;
     const char *sep = memchr(arg, '=', n);
-    char *enckey = NULL, *encvalue = NULL;
+    char *enckey = NULL, *encvalue = NULL, *deckey = NULL, *decvalue = NULL;
 
     if (!sep)
     {
@@ -170,25 +170,25 @@ static int parse_arg(struct ctx *const c, const char *const arg,
             __func__, strerror(errno));
         goto end;
     }
-
     /* URL parameters use '+' for whitespace, rather than %20. */
+    else if ((ret = http_decode_url(enckey, true, &deckey)))
+    {
+        fprintf(stderr, "%s: http_decode_url enckey failed\n", __func__);
+        goto end;
+    }
+    else if ((ret = http_decode_url(encvalue, true, &decvalue)))
+    {
+        fprintf(stderr, "%s: http_decode_url encvalue failed\n", __func__);
+        goto end;
+    }
+
     a = (const struct http_arg)
     {
-        .key = http_decode_url(enckey, true),
-        .value = http_decode_url(encvalue, true)
+        .key = deckey,
+        .value = decvalue
     };
 
-    if (!a.key)
-    {
-        fprintf(stderr, "%s: http_decode_url key failed\n", __func__);
-        goto end;
-    }
-    else if (!a.value)
-    {
-        fprintf(stderr, "%s: http_decode_url value failed\n", __func__);
-        goto end;
-    }
-    else if (!(args = realloc(c->args, (c->n_args + 1) * sizeof *args)))
+    if (!(args = realloc(c->args, (c->n_args + 1) * sizeof *args)))
     {
         fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
         goto end;
@@ -200,7 +200,11 @@ static int parse_arg(struct ctx *const c, const char *const arg,
 
 end:
     if (ret)
+    {
         arg_free(&a);
+        free(deckey);
+        free(decvalue);
+    }
 
     free(enckey);
     free(encvalue);
@@ -321,7 +325,7 @@ static int parse_resource(struct ctx *const c, const char *const enc_res)
         fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
         goto end;
     }
-    else if (!(resource = http_decode_url(trimmed_encres, false)))
+    else if ((ret = http_decode_url(trimmed_encres, false, &resource)))
     {
         fprintf(stderr, "%s: http_decode_url failed\n", __func__);
         goto end;
@@ -1968,31 +1972,32 @@ failure:
     return NULL;
 }
 
-char *http_decode_url(const char *url, const bool spaces)
+int http_decode_url(const char *url, const bool spaces, char **out)
 {
-    char *ret = NULL;
+    int ret = -1;
+    char *str = NULL;
     size_t n = 0;
 
     while (*url)
     {
-        char *const r = realloc(ret, n + 1);
+        char *const r = realloc(str, n + 1);
 
         if (!r)
         {
             fprintf(stderr, "%s: realloc(3) loop: %s\n",
                 __func__, strerror(errno));
-            goto failure;
+            goto end;
         }
 
-        ret = r;
+        str = r;
 
         if (spaces && *url == '+')
         {
-            ret[n++] = ' ';
+            str[n++] = ' ';
             url++;
         }
         else if (*url != '%')
-            ret[n++] = *url++;
+            str[n++] = *url++;
         else if (*(url + 1) && *(url + 2))
         {
             const char buf[sizeof "00"] = {*(url + 1), *(url + 2)};
@@ -2002,32 +2007,37 @@ char *http_decode_url(const char *url, const bool spaces)
             if (*endptr)
             {
                 fprintf(stderr, "%s: invalid number %s\n", __func__, buf);
-                goto failure;
+                ret = 1;
+                goto end;
             }
 
             url += 3;
-            ret[n++] = res;
+            str[n++] = res;
         }
         else
         {
             fprintf(stderr, "%s: unterminated %%\n", __func__);
-            goto failure;
+            ret = 1;
+            goto end;
         }
     }
 
-    char *const r = realloc(ret, n + 1);
+    char *const r = realloc(str, n + 1);
 
     if (!r)
     {
         fprintf(stderr, "%s: realloc(3) end: %s\n", __func__, strerror(errno));
-        goto failure;
+        goto end;
     }
 
-    ret = r;
-    ret[n] = '\0';
-    return ret;
+    str = r;
+    str[n] = '\0';
+    *out = str;
+    ret = 0;
 
-failure:
-    free(ret);
-    return NULL;
+end:
+    if (ret)
+        free(str);
+
+    return ret;
 }

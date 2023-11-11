@@ -105,6 +105,6 @@ int http_response_add_header(struct http_response *r, const char *header,
     const char *value);
 char *http_cookie_create(const char *key, const char *value);
 char *http_encode_url(const char *url);
-char *http_decode_url(const char *url, bool spaces);
+int http_decode_url(const char *url, bool spaces, char **out);
 
 #endif /* HTTP_H */
