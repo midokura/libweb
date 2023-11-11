@@ -1,0 +1,41 @@
+.TH HTTP_DECODE_URL 3 2023-11-11 0.2.0 "libweb Library Reference"
+
+.SH NAME
+http_decode_url \- decodes a percent-encoded null-terminated string
+
+.SH SYNOPSIS
+.LP
+.nf
+#include <libweb/http.h>
+.P
+int http_decode_url(const char *\fIurl\fP, bool \fIspaces\fP, char **\fIout\fP);
+.fi
+
+.SH DESCRIPTION
+The
+.IR http_encode_url ()
+function decodes a null-terminated string given by
+.I url
+using percent-encoding as defined by RFC 3986.
+
+.SH RETURN VALUE
+On success, zero is returned, and
+.I out
+is assigned to a valid pointer to the decoded, null-terminated string.
+On decoding error, a positive integer is returned. On fatal error, a
+negative integer is returned.
+
+.SH ERRORS
+No errors are defined.
+
+.SH SEE ALSO
+.BR http_encode_url (3),
+.BR libweb_http (7).
+
+.SH COPYRIGHT
+Copyright (C) 2023 Xavier Del Campo Romero.
+.P
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

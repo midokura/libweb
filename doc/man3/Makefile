@@ -19,6 +19,7 @@ OBJECTS = \
 	$(DESTDIR)$(man3dir)/html_serialize.3 \
 	$(DESTDIR)$(man3dir)/http_alloc.3 \
 	$(DESTDIR)$(man3dir)/http_cookie_create.3 \
+	$(DESTDIR)$(man3dir)/http_decode_url.3 \
 	$(DESTDIR)$(man3dir)/http_encode_url.3 \
 	$(DESTDIR)$(man3dir)/http_free.3 \
 	$(DESTDIR)$(man3dir)/http_response_add_header.3 \
