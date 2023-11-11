@@ -475,25 +475,51 @@ static void ctx_free(struct ctx *const c)
     *c = (const struct ctx){0};
 }
 
+static void free_response_headers(struct http_response *const r)
+{
+    for (size_t i = 0; i < r->n_headers; i++)
+    {
+        const struct http_header *const hdr = &r->headers[i];
+
+        free(hdr->header);
+        free(hdr->value);
+    }
+
+    free(r->headers);
+    r->headers = NULL;
+    r->n_headers = 0;
+}
+
 static int prepare_headers(struct http_ctx *const h)
 {
+    int ret = -1;
     struct write_ctx *const w = &h->wctx;
     struct dynstr *const d = &w->d;
+    struct http_response *const r = &w->r;
 
     dynstr_init(d);
 
     for (size_t i = 0; i < w->r.n_headers; i++)
     {
-        const struct http_header *const hdr = &w->r.headers[i];
+        const struct http_header *const hdr = &r->headers[i];
 
-        dynstr_append_or_ret_nonzero(d, "%s: %s\r\n", hdr->header, hdr->value);
-        free(hdr->header);
-        free(hdr->value);
+        if (dynstr_append(d, "%s: %s\r\n", hdr->header, hdr->value))
+        {
+            fprintf(stderr, "%s: dynstr_append hdr failed\n", __func__);
+            goto end;
+        }
     }
 
-    free(w->r.headers);
-    dynstr_append_or_ret_nonzero(d, "\r\n");
-    return 0;
+    if (dynstr_append(d, "\r\n"))
+    {
+        fprintf(stderr, "%s: dynstr_append crlf failed\n", __func__);
+        goto end;
+    }
+
+    ret = 0;
+end:
+    free_response_headers(r);
+    return ret;
 }
 
 static int rw_error(const int r, bool *const close)
@@ -579,6 +605,7 @@ static int write_ctx_free(struct write_ctx *const w)
         fprintf(stderr, "%s: fclose(3): %s\n", __func__, strerror(errno));
 
     dynstr_free(&w->d);
+    free_response_headers(&w->r);
     *w = (const struct write_ctx){0};
     return ret;
 }
@@ -767,8 +794,13 @@ static int start_response(struct http_ctx *const h)
 
     w->pending = true;
     dynstr_init(&w->d);
-    dynstr_append_or_ret_nonzero(&w->d, HTTP_VERSION " %d %s\r\n",
-        c->code, c->descr);
+
+    if (dynstr_append(&w->d, HTTP_VERSION " %d %s\r\n", c->code, c->descr))
+    {
+        fprintf(stderr, "%s: dynstr_append failed\n", __func__);
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1829,8 +1861,12 @@ static int append_expire(struct dynstr *const d)
         fprintf(stderr, "%s: strftime(3) failed\n", __func__);
         return -1;
     }
+    else if (dynstr_append(d, "; Expires=%s", s))
+    {
+        fprintf(stderr, "%s: dynstr_append failed\n", __func__);
+        return -1;
+    }
 
-    dynstr_append_or_ret_nonzero(d, "; Expires=%s", s);
     return 0;
 }
 
