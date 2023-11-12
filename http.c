@@ -1491,25 +1491,30 @@ static int read_mf_body_to_file(struct http_ctx *const h, const void *const buf,
     return 0;
 }
 
-static int reset_boundary(struct http_ctx *const h, const void *const buf,
+static int reset_boundary(struct http_ctx *const h)
+{
+    struct multiform *const m = &h->ctx.u.mf;
+    struct form *const f = &m->forms[m->nforms - 1];
+    int (*const read_mf)(struct http_ctx *, const void *, size_t) =
+            f->filename ? read_mf_body_to_file : read_mf_body_to_mem;
+    const size_t len = strlen(m->boundary);
+    const int res = read_mf(h, m->boundary, len);
+
+    if (res)
+        return res;
+
+    memset(m->boundary, '\0', len);
+    m->blen = 0;
+    return 0;
+}
+
+static int dump_body(struct http_ctx *const h, const void *const buf,
     const size_t n)
 {
     struct multiform *const m = &h->ctx.u.mf;
     struct form *const f = &m->forms[m->nforms - 1];
     int (*const read_mf)(struct http_ctx *, const void *, size_t) =
             f->filename ? read_mf_body_to_file : read_mf_body_to_mem;
-
-    if (n)
-    {
-        const size_t len = strlen(m->boundary);
-        const int res = read_mf(h, m->boundary, len);
-
-        if (res)
-            return res;
-
-        memset(m->boundary, '\0', len);
-        m->blen = 0;
-    }
 
     return read_mf(h, buf, n);
 }
@@ -1624,6 +1629,12 @@ static int read_mf_body_boundary_byte(struct http_ctx *const h, const char b,
             return ret;
         }
     }
+    else
+    {
+        fprintf(stderr, "%s: expected %hhx, got %hhx\n", __func__,
+            c->boundary[m->blen], b);
+        return 1;
+    }
 
     return 0;
 }
@@ -1632,11 +1643,6 @@ static int read_mf_body_boundary_byte(struct http_ctx *const h, const char b,
 static const char *http_memmem(const char *const a, const void *const b,
     const size_t n)
 {
-    const size_t len = strlen(a);
-
-    if (len > n)
-        return NULL;
-
     const char *s = a, *st = NULL;
 
     for (size_t i = 0; i < n; i++)
@@ -1669,14 +1675,23 @@ static const char *http_memmem(const char *const a, const void *const b,
 static int read_mf_body_boundary(struct http_ctx *const h,
     const char **const buf, size_t *const n)
 {
+    const char *orig_buf = *buf;
+    const size_t orig_n = *n;
     struct ctx *const c = &h->ctx;
     struct multiform *const m = &c->u.mf;
-    const char *const boundary = http_memmem(&c->boundary[m->blen], *buf, *n);
     int res;
+
+    if (m->blen
+        && **buf != c->boundary[m->blen]
+        && (res = reset_boundary(h)))
+        return res;
+
+    const char *const boundary = http_memmem(&c->boundary[m->blen], *buf, *n);
 
     if (!boundary)
     {
-        if ((res = reset_boundary(h, *buf, *n)))
+        if ((res = reset_boundary(h))
+            || (res = dump_body(h, *buf, *n)))
             return res;
 
         *n = 0;
@@ -1685,7 +1700,9 @@ static int read_mf_body_boundary(struct http_ctx *const h,
 
     const size_t prev = boundary - *buf;
 
-    if ((res = reset_boundary(h, *buf, prev)))
+    if (prev && (res = reset_boundary(h)))
+        return res;
+    else if ((res = dump_body(h, *buf, prev)))
         return res;
 
     *buf += prev;
