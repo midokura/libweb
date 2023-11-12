@@ -98,6 +98,7 @@ struct http_ctx
         struct http_response r;
         off_t n;
         struct dynstr d;
+        enum http_op op;
     } wctx;
 
     /* From RFC9112, section 3 (Request line):
@@ -582,6 +583,11 @@ static int write_ctx_free(struct write_ctx *const w)
     return ret;
 }
 
+static bool must_write_body(const struct write_ctx *const w)
+{
+    return w->op != HTTP_OP_HEAD;
+}
+
 static int write_header_cr_line(struct http_ctx *const h, bool *const close)
 {
     struct write_ctx *const w = &h->wctx;
@@ -597,7 +603,7 @@ static int write_header_cr_line(struct http_ctx *const h, bool *const close)
 
         dynstr_free(d);
 
-        if (w->r.n)
+        if (w->r.n && must_write_body(w))
         {
             w->state = BODY_LINE;
             w->n = 0;
@@ -914,6 +920,7 @@ static int process_payload(struct http_ctx *const h, const char *const line)
     const struct http_payload p = ctx_to_payload(c);
     const int ret = h->cfg.payload(&p, &h->wctx.r, h->cfg.user);
 
+    h->wctx.op = c->op;
     ctx_free(c);
 
     if (ret)
