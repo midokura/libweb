@@ -1496,16 +1496,21 @@ static int reset_boundary(struct http_ctx *const h, const void *const buf,
 {
     struct multiform *const m = &h->ctx.u.mf;
     struct form *const f = &m->forms[m->nforms - 1];
-    const size_t len = strlen(m->boundary);
     int (*const read_mf)(struct http_ctx *, const void *, size_t) =
-        f->filename ? read_mf_body_to_file : read_mf_body_to_mem;
-    const int res = read_mf(h, m->boundary, len);
+            f->filename ? read_mf_body_to_file : read_mf_body_to_mem;
 
-    if (res)
-        return res;
+    if (n)
+    {
+        const size_t len = strlen(m->boundary);
+        const int res = read_mf(h, m->boundary, len);
 
-    memset(m->boundary, '\0', len);
-    m->blen = 0;
+        if (res)
+            return res;
+
+        memset(m->boundary, '\0', len);
+        m->blen = 0;
+    }
+
     return read_mf(h, buf, n);
 }
 
@@ -1599,19 +1604,20 @@ static int read_mf_body_boundary_byte(struct http_ctx *const h, const char b,
 {
     struct ctx *const c = &h->ctx;
     struct multiform *const m = &c->u.mf;
+    const size_t clen = strlen(c->boundary);
 
     if (b == c->boundary[m->blen])
     {
-        m->boundary[len] = b;
+        m->boundary[m->blen++] = b;
 
-        if (++m->blen >= strlen(c->boundary))
+        if (m->blen >= clen)
         {
             /* Found intermediate boundary. */
             struct form *const f = &m->forms[m->nforms - 1];
             const int ret = f->filename ? apply_from_file(h, f)
                 : apply_from_mem(h, f);
 
-            memset(m->boundary, '\0', len + 1);
+            memset(m->boundary, '\0', clen);
             m->blen = 0;
             m->state = MF_END_BOUNDARY_CR_LINE;
             m->written = 0;
@@ -1657,7 +1663,7 @@ static const char *http_memmem(const char *const a, const void *const b,
         }
     }
 
-    return NULL;
+    return st;
 }
 
 static int read_mf_body_boundary(struct http_ctx *const h,
