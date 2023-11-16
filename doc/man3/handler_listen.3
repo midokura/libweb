@@ -1,42 +1,37 @@
-.TH HANDLER_LISTEN 3 2023-09-14 0.1.0 "libweb Library Reference"
+.TH HANDLER_LISTEN 3 2023-11-16 0.2.0 "libweb Library Reference"
 
 .SH NAME
-handler_listen \- listen to and handle incoming connections on a web
-server
+handler_listen \- initialize server to listen to a given port
 
 .SH SYNOPSIS
 .LP
 .nf
 #include <libweb/handler.h>
 .P
-int handler_listen(struct handler *\fIh\fP, unsigned short \fIport\fP);
+int handler_listen(struct handler *\fIh\fP, unsigned short \fIport\fP, unsigned short *\fIoutport\fP);
 .fi
 
 .SH DESCRIPTION
 The
 .IR handler_listen (3)
-function listens for connections on the TCP port number given by
-.I port
-on a
+function initializes the internal server on a
 .I struct handler
 object pointed to by
 .IR h ,
 which must be previously allocated by a call to
-.IR handler_alloc (3).
+.IR handler_alloc (3),
+to listen on the TCP port given by
+.IR port .
 
-Also, the
+If
+.I outport
+is a valid pointer,
 .IR handler_listen (3)
-function validates incoming requests and calls the configured
-callbacks previously given by one or more calls to
-.IR handler_add (3).
-
-The
-.IR handler_listen (3)
-function blocks until either
-.I SIGTERM
-or
-.I SIGINT
-are triggered.
+shall assign the object pointed to by
+.I outport
+to the port number the server shall listen to. This is typically meant
+for servers that listen on any port, but the caller needs to know which
+port was eventually selected by the implementation.
 
 .SH RETURN VALUE
 On success, zero is returned. On error, a negative integer is returned.
@@ -44,28 +39,16 @@ On success, zero is returned. On error, a negative integer is returned.
 .SH ERRORS
 No errors are defined.
 
-.SH FUTURE DIRECTIONS
-When no configured endpoint matches the incoming request,
-.I libweb
-shall respond with a
-.B 404 Not Found
-HTTP status code with no payload. Since some library users might want
-to provide custom pages for such error condition, future versions of
-this library shall replace the harcoded response with an additional
-callback on
-.IR "struct handler_cfg" ,
-similarly to its member
-.IR length .
-
 .SH SEE ALSO
 .BR handler_alloc (3),
 .BR handler_free (3),
 .BR handler_add (3),
+.BR handler_loop (3),
 .BR libweb_handler (7),
 .BR signal (7).
 
 .SH COPYRIGHT
-Copyright (C) 2023 Xavier Del Campo Romero.
+Copyright (C) 2023 libweb contributors.
 .P
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
