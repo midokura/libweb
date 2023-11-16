@@ -9,6 +9,7 @@ OBJECTS = \
 	$(DESTDIR)$(man3dir)/handler_alloc.3 \
 	$(DESTDIR)$(man3dir)/handler_free.3 \
 	$(DESTDIR)$(man3dir)/handler_listen.3 \
+	$(DESTDIR)$(man3dir)/handler_loop.3 \
 	$(DESTDIR)$(man3dir)/html_node_add_attr.3 \
 	$(DESTDIR)$(man3dir)/html_node_add_child.3 \
 	$(DESTDIR)$(man3dir)/html_node_add_sibling.3 \
