@@ -320,7 +320,8 @@ static int init_signals(void)
     return 0;
 }
 
-struct server *server_init(const unsigned short port)
+struct server *server_init(const unsigned short port,
+    unsigned short *const outport)
 {
     struct server *const s = malloc(sizeof *s);
 
@@ -373,8 +374,9 @@ struct server *server_init(const unsigned short port)
         fprintf(stderr, "%s: getsockname(2): %s\n", __func__, strerror(errno));
         goto failure;
     }
+    else if (outport)
+        *outport = ntohs(in.sin_port);
 
-    printf("Listening on port %hu\n", ntohs(in.sin_port));
     return s;
 
 failure:
