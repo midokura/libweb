@@ -1,6 +1,7 @@
 .POSIX:
 
 all: \
+	headers \
 	hello \
 	html
 
@@ -9,6 +10,9 @@ clean:
 	+cd html && $(MAKE) clean
 
 FORCE:
+
+headers: FORCE
+	+cd headers && $(MAKE)
 
 hello: FORCE
 	+cd hello && $(MAKE)

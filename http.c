@@ -88,7 +88,8 @@ struct http_ctx
         } u;
 
         struct http_arg *args;
-        size_t n_args;
+        size_t n_args, n_headers;
+        struct http_header *headers;
     } ctx;
 
     struct write_ctx
@@ -475,6 +476,15 @@ static void ctx_free(struct ctx *const c)
     for (size_t i = 0; i < c->n_args; i++)
         arg_free(&c->args[i]);
 
+    for (size_t i = 0; i < c->n_headers; i++)
+    {
+        const struct http_header *const hdr = &c->headers[i];
+
+        free(hdr->header);
+        free(hdr->value);
+    }
+
+    free(c->headers);
     free(c->args);
     *c = (const struct ctx){0};
 }
@@ -946,7 +956,9 @@ static struct http_payload ctx_to_payload(const struct ctx *const c)
         .op = c->op,
         .resource = c->resource,
         .args = c->args,
-        .n_args = c->n_args
+        .n_args = c->n_args,
+        .headers = c->headers,
+        .n_headers = c->n_headers
     };
 }
 
@@ -1020,6 +1032,56 @@ static int expect(struct http_ctx *const h, const char *const value)
     return 0;
 }
 
+static int append_header(struct http_ctx *const h, const char *const line,
+    const size_t n, const char *const value)
+{
+    struct ctx *const c = &h->ctx;
+
+    if (c->n_headers >= h->cfg.max_headers)
+        return 0;
+
+    struct http_header *const headers = realloc(c->headers,
+        (c->n_headers + 1) * sizeof *headers);
+    char *headerdup = NULL, *valuedup = NULL;
+    int ret = -1;
+
+    if (!headers)
+    {
+        fprintf(stderr, "%s: realloc(3): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    c->headers = headers;
+
+    if (!(headerdup = strndup(line, n)))
+    {
+        fprintf(stderr, "%s: strndup(3): %s\n", __func__, strerror(errno));
+        goto end;
+    }
+    else if (!(valuedup = strdup(value)))
+    {
+        fprintf(stderr, "%s: strdup(3): %s\n", __func__, strerror(errno));
+        goto end;
+    }
+
+    c->headers[c->n_headers++] = (const struct http_header)
+    {
+        .header = headerdup,
+        .value = valuedup
+    };
+
+    ret = 0;
+
+end:
+    if (ret)
+    {
+        free(headerdup);
+        free(valuedup);
+    }
+
+    return ret;
+}
+
 static int process_header(struct http_ctx *const h, const char *const line,
     const size_t n, const char *const value)
 {
@@ -1059,7 +1121,7 @@ static int process_header(struct http_ctx *const h, const char *const line,
             return ret;
     }
 
-    return 0;
+    return append_header(h, line, n, value);
 }
 
 static int check_length(struct http_ctx *const h)
