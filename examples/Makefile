@@ -2,7 +2,8 @@
 
 all: \
 	hello \
-	html
+	html \
+	put
 
 clean:
 	+cd hello && $(MAKE) clean
