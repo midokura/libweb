@@ -5,3 +5,4 @@
 *.so.*
 examples/hello/hello
 examples/html/html
+examples/put/put
