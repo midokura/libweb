@@ -11,7 +11,8 @@ struct http_payload
     {
         HTTP_OP_GET,
         HTTP_OP_POST,
-        HTTP_OP_HEAD
+        HTTP_OP_HEAD,
+        HTTP_OP_PUT
     } op;
 
     const char *resource;
@@ -25,7 +26,6 @@ struct http_payload
     {
         struct http_post
         {
-            bool expect_continue;
             const char *data;
             size_t nfiles, npairs;
 
@@ -39,6 +39,11 @@ struct http_payload
                 const char *name, *tmpname, *filename;
             } *files;
         } post;
+
+        struct http_put
+        {
+            const char *tmpname;
+        } put;
     } u;
 
     const struct http_arg
@@ -47,6 +52,7 @@ struct http_payload
     } *args;
 
     size_t n_args;
+    bool expect_continue;
 };
 
 #define HTTP_STATUSES \
