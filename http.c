@@ -38,11 +38,11 @@ struct http_ctx
         char *resource, *field, *value, *boundary;
         size_t len;
 
-        struct post
+        struct payload
         {
             char *path;
             unsigned long long len, read;
-        } post;
+        } payload;
 
         union
         {
@@ -85,11 +85,19 @@ struct http_ctx
                     char *name, *filename, *tmpname, *value;
                 } *forms;
             } mf;
+
+            struct put
+            {
+                char *tmpname;
+                int fd;
+                off_t written;
+            } put;
         } u;
 
         struct http_arg *args;
         size_t n_args, n_headers;
         struct http_header *headers;
+        bool has_length, expect_continue;
     } ctx;
 
     struct write_ctx
@@ -340,6 +348,27 @@ end:
     return ret;
 }
 
+static int get_op(const char *const line, const size_t n,
+    enum http_op *const out)
+{
+    static const char *const ops[] =
+    {
+        [HTTP_OP_GET] = "GET",
+        [HTTP_OP_POST] = "POST",
+        [HTTP_OP_HEAD] = "HEAD",
+        [HTTP_OP_PUT] = "PUT"
+    };
+
+    for (enum http_op op = 0; op < sizeof ops / sizeof *ops; op++)
+        if (!strncmp(line, ops[op], n))
+        {
+            *out = op;
+            return 0;
+        }
+
+    return -1;
+}
+
 static int start_line(struct http_ctx *const h)
 {
     const char *const line = h->line;
@@ -361,13 +390,7 @@ static int start_line(struct http_ctx *const h)
     struct ctx *const c = &h->ctx;
     const size_t n = op - line;
 
-    if (!strncmp(line, "GET", n))
-        c->op = HTTP_OP_GET;
-    else if (!strncmp(line, "POST", n))
-        c->op = HTTP_OP_POST;
-    else if (!strncmp(line, "HEAD", n))
-        c->op = HTTP_OP_HEAD;
-    else
+    if (get_op(line, n, &c->op))
     {
         fprintf(stderr, "%s: unsupported HTTP op %.*s\n",
             __func__, (int)n, line);
@@ -466,6 +489,16 @@ static void ctx_free(struct ctx *const c)
         }
 
         free(m->forms);
+    }
+    else if (c->op == HTTP_OP_PUT)
+    {
+        struct put *const p = &c->u.put;
+
+        if (p->fd >= 0 && close(p->fd))
+            fprintf(stderr, "%s: close(2) p->fd: %s\n",
+                __func__, strerror(errno));
+
+        free(c->u.put.tmpname);
     }
 
     free(c->field);
@@ -859,7 +892,7 @@ static int set_length(struct http_ctx *const h, const char *const len)
     char *end;
 
     errno = 0;
-    h->ctx.post.len = strtoull(len, &end, 10);
+    const unsigned long long value = strtoull(len, &end, 10);
 
     if (errno || *end != '\0')
     {
@@ -868,6 +901,26 @@ static int set_length(struct http_ctx *const h, const char *const len)
         return 1;
     }
 
+    struct ctx *const c = &h->ctx;
+
+    switch (c->op)
+    {
+        case HTTP_OP_POST:
+            /* Fall through. */
+        case HTTP_OP_PUT:
+            c->payload.len = value;
+            c->u.put = (const struct put){.fd = -1};
+            break;
+
+        case HTTP_OP_GET:
+            /* Fall through. */
+        case HTTP_OP_HEAD:
+            fprintf(stderr, "%s: unexpected header for HTTP op %d\n",
+                __func__, c->op);
+            return 1;
+    }
+
+    c->has_length = true;
     return 0;
 }
 
@@ -962,7 +1015,7 @@ static struct http_payload ctx_to_payload(const struct ctx *const c)
     };
 }
 
-static int process_payload(struct http_ctx *const h, const char *const line)
+static int process_payload(struct http_ctx *const h)
 {
     struct ctx *const c = &h->ctx;
     const struct http_payload p = ctx_to_payload(c);
@@ -1008,25 +1061,28 @@ static int expect(struct http_ctx *const h, const char *const value)
     if (!strcmp(value, "100-continue"))
     {
         struct ctx *const c = &h->ctx;
-        const struct http_payload p =
+
+        if (!c->has_length)
         {
-            .u.post.expect_continue = true,
-            .cookie =
-            {
-                .field = c->field,
-                .value = c->value
-            },
+            fprintf(stderr, "%s: 100-continue without expected content\n",
+                __func__);
+            return 1;
+        }
 
-            .op = c->op,
-            .resource = c->resource
-        };
+        switch (c->op)
+        {
+            case HTTP_OP_POST:
+                /* Fall through. */
+            case HTTP_OP_PUT:
+                c->expect_continue = true;
+                break;
 
-        const int ret = h->cfg.payload(&p, &h->wctx.r, h->cfg.user);
-
-        if (ret)
-            return ret;
-
-        return start_response(h);
+            case HTTP_OP_GET:
+                /* Fall through. */
+            case HTTP_OP_HEAD:
+                fprintf(stderr, "%s: unexpected op %d\n", __func__, c->op);
+                return 1;
+        }
     }
 
     return 0;
@@ -1133,7 +1189,39 @@ static int check_length(struct http_ctx *const h)
         .value = c->value
     };
 
-    return h->cfg.length(c->post.len, &cookie, &h->wctx.r, h->cfg.user);
+    return h->cfg.length(c->payload.len, &cookie, &h->wctx.r, h->cfg.user);
+}
+
+static int process_expect(struct http_ctx *const h)
+{
+    struct ctx *const c = &h->ctx;
+    const int res = check_length(h);
+
+    if (res)
+    {
+        if (res < 0)
+        {
+            fprintf(stderr, "%s: check_length failed\n", __func__);
+            return res;
+        }
+
+        h->wctx.close = true;
+        return start_response(h);
+    }
+
+    struct http_payload p = ctx_to_payload(c);
+
+    p.expect_continue = true;
+
+    const int ret = h->cfg.payload(&p, &h->wctx.r, h->cfg.user);
+
+    h->wctx.op = c->op;
+
+    if (ret)
+        return ret;
+
+    c->state = BODY_LINE;
+    return start_response(h);
 }
 
 static int header_cr_line(struct http_ctx *const h)
@@ -1148,12 +1236,14 @@ static int header_cr_line(struct http_ctx *const h)
             case HTTP_OP_GET:
                 /* Fall through. */
             case HTTP_OP_HEAD:
-                return process_payload(h, line);
+                return process_payload(h);
 
             case HTTP_OP_POST:
             {
-                if (!c->post.len)
-                    return process_payload(h, line);
+                if (!c->payload.len)
+                    return process_payload(h);
+                else if (c->expect_continue)
+                    return process_expect(h);
                 else if (c->boundary)
                 {
                     const int res = check_length(h);
@@ -1175,6 +1265,21 @@ static int header_cr_line(struct http_ctx *const h)
                 c->state = BODY_LINE;
                 return 0;
             }
+
+            case HTTP_OP_PUT:
+                if (!c->has_length)
+                {
+                    fprintf(stderr, "%s: expected Content-Length header\n",
+                        __func__);
+                    return 1;
+                }
+                else if (!c->payload.len)
+                    return process_payload(h);
+                else if (c->expect_continue)
+                    return process_expect(h);
+
+                c->state = BODY_LINE;
+                return 0;
         }
     }
 
@@ -1472,7 +1577,7 @@ static int process_mf_line(struct http_ctx *const h)
         [MF_END_BOUNDARY_CR_LINE] = end_boundary_line
     };
 
-    h->ctx.post.read += strlen(h->line) + strlen("\r\n");
+    h->ctx.payload.read += strlen(h->line) + strlen("\r\n");
     return state[h->ctx.u.mf.state](h);
 }
 
@@ -1525,7 +1630,7 @@ static int read_mf_body_to_mem(struct http_ctx *const h, const void *const buf,
     memcpy(&h->line[m->written], buf, n);
     m->written += n;
     m->len += n;
-    c->post.read += n;
+    c->payload.read += n;
     return 0;
 }
 
@@ -1549,7 +1654,7 @@ static int read_mf_body_to_file(struct http_ctx *const h, const void *const buf,
 
     m->written += res;
     m->len += res;
-    c->post.read += res;
+    c->payload.read += res;
     return 0;
 }
 
@@ -1826,7 +1931,7 @@ static int read_multiform(struct http_ctx *const h, bool *const close)
 {
     /* Note: the larger the buffer below, the less CPU load. */
     char buf[sizeof h->line];
-    struct post *const p = &h->ctx.post;
+    struct payload *const p = &h->ctx.payload;
     const unsigned long long left = p->len - p->read;
     const size_t rem = left > sizeof buf ? sizeof buf : left;
     const int r = h->cfg.read(buf, rem, h->cfg.user);
@@ -1846,7 +1951,7 @@ static int read_body_to_mem(struct http_ctx *const h, bool *const close)
         return rw_error(r, close);
 
     struct ctx *const c = &h->ctx;
-    struct post *const p = &c->post;
+    struct payload *const p = &c->payload;
 
     if (p->read >= sizeof h->line - 1)
     {
@@ -1881,10 +1986,91 @@ static int read_body_to_mem(struct http_ctx *const h, bool *const close)
     return 0;
 }
 
+static int read_put_body_to_file(struct http_ctx *const h,
+    const void *const buf, const size_t n)
+{
+    struct ctx *const c = &h->ctx;
+    struct put *const put = &c->u.put;
+    ssize_t res;
+
+    if (!put->tmpname && !(put->tmpname = get_tmp(h->cfg.tmpdir)))
+    {
+        fprintf(stderr, "%s: get_tmp failed\n", __func__);
+        return -1;
+    }
+    else if (put->fd < 0 && (put->fd = mkstemp(put->tmpname)) < 0)
+    {
+        fprintf(stderr, "%s: mkstemp(3): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+    else if ((res = pwrite(put->fd, buf, n, c->payload.read)) < 0)
+    {
+        fprintf(stderr, "%s: pwrite(2): %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    c->payload.read += res;
+    return 0;
+}
+
+static int read_to_file(struct http_ctx *const h, bool *const close)
+{
+    char buf[BUFSIZ];
+    struct ctx *const c = &h->ctx;
+    struct payload *const p = &c->payload;
+    const unsigned long long left = p->len - p->read;
+    const size_t rem = left > sizeof buf ? sizeof buf : left;
+    const int r = h->cfg.read(buf, rem, h->cfg.user);
+
+    if (r <= 0)
+        return rw_error(r, close);
+    else if (read_put_body_to_file(h, buf, r))
+        return -1;
+    else if (p->read >= p->len)
+    {
+        const struct http_payload pl =
+        {
+            .cookie =
+            {
+                .field = c->field,
+                .value = c->value
+            },
+
+            .op = c->op,
+            .resource = c->resource,
+            .u.put =
+            {
+                .tmpname = c->u.put.tmpname
+            }
+        };
+
+        return send_payload(h, &pl);
+    }
+
+    return 0;
+}
+
 static int read_body(struct http_ctx *const h, bool *const close)
 {
-    return h->ctx.boundary ? read_multiform(h, close)
-        : read_body_to_mem(h, close);
+    const struct ctx *const c = &h->ctx;
+
+    switch (c->op)
+    {
+        case HTTP_OP_POST:
+            return c->boundary ? read_multiform(h, close)
+            : read_body_to_mem(h, close);
+
+        case HTTP_OP_PUT:
+            return read_to_file(h, close);
+
+        case HTTP_OP_GET:
+            /* Fall through. */
+        case HTTP_OP_HEAD:
+            break;
+    }
+
+    fprintf(stderr, "%s: unexpected op %d\n", __func__, c->op);
+    return -1;
 }
 
 static int process_line(struct http_ctx *const h)
