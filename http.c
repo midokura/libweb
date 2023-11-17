@@ -940,6 +940,12 @@ static int set_content_type(struct http_ctx *const h, const char *const type)
             __func__, (int)n, type);
         return 1;
     }
+    else if (h->ctx.op != HTTP_OP_POST)
+    {
+        fprintf(stderr, "%s: multipart/form-data only expected for POST\n",
+            __func__);
+        return 1;
+    }
 
     const char *boundary = sep + 1;
 
