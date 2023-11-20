@@ -81,7 +81,6 @@ static int on_length(const unsigned long long len,
 int main(int argc, char *argv[])
 {
     int ret = EXIT_FAILURE;
-    const short port = 8080;
     const struct handler_cfg cfg =
     {
         .length = on_length
@@ -103,9 +102,19 @@ int main(int argc, char *argv[])
             goto end;
         }
 
-    if (handler_listen(h, port))
+    unsigned short outport;
+
+    if (handler_listen(h, 0, &outport))
     {
         fprintf(stderr, "%s: handler_listen failed\n", __func__);
+        goto end;
+    }
+
+    printf("Listening on port %hu\n", outport);
+
+    if (handler_loop(h))
+    {
+        fprintf(stderr, "%s: handler_loop failed\n", __func__);
         goto end;
     }
 

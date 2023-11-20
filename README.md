@@ -178,7 +178,7 @@ essential for `slcl`.
 
 ```
 libweb, a simple and lightweight web framework.
-Copyright (C) 2023  Xavier Del Campo Romero
+Copyright (C) 2023  libweb contributors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by

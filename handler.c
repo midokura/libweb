@@ -182,14 +182,20 @@ end:
     return ret;
 }
 
-int handler_listen(struct handler *const h, const unsigned short port)
+int handler_listen(struct handler *const h, const unsigned short port,
+    unsigned short *const outport)
 {
-    if (!(h->server = server_init(port)))
+    if (!(h->server = server_init(port, outport)))
     {
         fprintf(stderr, "%s: server_init failed\n", __func__);
         return -1;
     }
 
+    return 0;
+}
+
+int handler_loop(struct handler *const h)
+{
     for (;;)
     {
         bool exit, io;
