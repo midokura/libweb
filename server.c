@@ -59,7 +59,6 @@ int server_client_close(struct server *const s, struct server_client *const c)
             {
                 fprintf(stderr, "%s: close(2): %s\n",
                     __func__, strerror(errno));
-                return -1;
             }
             else if (ref->prev)
                 ref->prev->next = next;
