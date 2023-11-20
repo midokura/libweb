@@ -13,6 +13,7 @@ struct handler_cfg
     int (*length)(unsigned long long len, const struct http_cookie *c,
         struct http_response *r, void *user);
     void *user;
+    size_t max_headers;
 };
 
 struct handler *handler_alloc(const struct handler_cfg *cfg);

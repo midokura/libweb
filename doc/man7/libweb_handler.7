@@ -1,4 +1,4 @@
-.TH LIBWEB_HANDLER 7 2023-09-15 0.1.0 "libweb Library Reference"
+.TH LIBWEB_HANDLER 7 2023-11-18 0.2.0 "libweb Library Reference"
 
 .SH NAME
 libweb_handler \- libweb high-level website configuration
@@ -69,15 +69,17 @@ struct handler_cfg
     const char *\fItmpdir\fP;
     int (*\fIlength\fP)(unsigned long long len, const struct http_cookie *c, struct http_response *r, void *user);
     void *\fIuser\fP;
+    size_t \fImax_headers\fP;
 };
 .EE
 .in
 .PP
 
 .IR tmpdir ,
-.I length
-and
+.IR length ,
 .I user
+and
+.I max_headers
 are passed directly to the
 .I struct http_cfg
 object used to initialize a

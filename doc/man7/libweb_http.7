@@ -1,4 +1,4 @@
-.TH LIBWEB_HTTP 7 2023-09-15 0.1.0 "libweb Library Reference"
+.TH LIBWEB_HTTP 7 2023-11-18 0.2.0 "libweb Library Reference"
 
 .SH NAME
 libweb_http \- libweb HTTP connection handling and utilities
@@ -84,6 +84,7 @@ struct http_cfg
     int (*\fIlength\fP)(unsigned long long \fIlen\fP, const struct http_cookie *\fIc\fP, struct http_response *\fIr\fP, void *\fIuser\fP);
     const char *\fItmpdir\fP;
     void *\fIuser\fP;
+    size_t \fImax_headers\fP;
 };
 .EE
 .in
@@ -195,6 +196,15 @@ other function pointers defined by
 .I user
 can be a null pointer.
 
+.I max_headers
+refers to the maximum number of header fields that shall be passed to the
+.IR "struct http_payload"
+object passed to the function pointed to by
+.IR payload .
+Any extra headers sent by the client outside this maximum value shall be
+silently ignored by
+.IR libweb .
+
 .SS HTTP payload
 
 When a client submits a request to the server,
@@ -224,6 +234,8 @@ struct http_payload
 
     const struct http_arg *\fIargs\fP;
     size_t \fIn_args\fP;
+    const struct http_header *\fIheaders\fP;
+    size_t \fIn_headers\fP;
 };
 .EE
 .in
@@ -259,6 +271,11 @@ Also, see section
 defines a list of key-value pairs containing URL parameters. Its length
 is defined by
 .IR n_args .
+
+.I headers
+defines a list of key-value pairs containing header fields. Its length
+is defined by
+.IR n_headers .
 
 .SS HTTP POST payload
 

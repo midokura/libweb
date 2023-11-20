@@ -5,13 +5,19 @@
 #include <stddef.h>
 #include <stdio.h>
 
+struct http_header
+{
+    char *header, *value;
+};
+
 struct http_payload
 {
     enum http_op
     {
         HTTP_OP_GET,
         HTTP_OP_POST,
-        HTTP_OP_HEAD
+        HTTP_OP_HEAD,
+        HTTP_OP_PUT
     } op;
 
     const char *resource;
@@ -25,7 +31,6 @@ struct http_payload
     {
         struct http_post
         {
-            bool expect_continue;
             const char *data;
             size_t nfiles, npairs;
 
@@ -39,6 +44,11 @@ struct http_payload
                 const char *name, *tmpname, *filename;
             } *files;
         } post;
+
+        struct http_put
+        {
+            const char *tmpname;
+        } put;
     } u;
 
     const struct http_arg
@@ -46,7 +56,9 @@ struct http_payload
         char *key, *value;
     } *args;
 
-    size_t n_args;
+    size_t n_args, n_headers;
+    const struct http_header *headers;
+    bool expect_continue;
 };
 
 #define HTTP_STATUSES \
@@ -69,10 +81,7 @@ struct http_response
 #undef X
     } status;
 
-    struct http_header
-    {
-        char *header, *value;
-    } *headers;
+    struct http_header *headers;
 
     union
     {
@@ -96,6 +105,7 @@ struct http_cfg
         struct http_response *r, void *user);
     const char *tmpdir;
     void *user;
+    size_t max_headers;
 };
 
 struct http_ctx *http_alloc(const struct http_cfg *cfg);

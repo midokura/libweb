@@ -109,7 +109,8 @@ static struct client *find_or_alloc_client(struct handler *const h,
         .payload = on_payload,
         .length = on_length,
         .user = ret,
-        .tmpdir = h->cfg.tmpdir
+        .tmpdir = h->cfg.tmpdir,
+        .max_headers = h->cfg.max_headers
     };
 
     *ret = (const struct client)
