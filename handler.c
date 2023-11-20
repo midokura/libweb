@@ -151,13 +151,13 @@ static void client_free(struct client *const c)
 static int remove_client_from_list(struct handler *const h,
     struct client *const c)
 {
-    int ret = -1;
+    int ret = 0;
 
     if (server_client_close(h->server, c->c))
     {
         fprintf(stderr, "%s: server_client_close failed\n",
             __func__);
-        goto end;
+        ret = -1;
     }
 
     for (struct client *cl = h->clients, *prev = NULL; cl;
@@ -174,9 +174,6 @@ static int remove_client_from_list(struct handler *const h,
         }
     }
 
-    ret = 0;
-
-end:
     client_free(c);
     return ret;
 }
