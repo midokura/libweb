@@ -54,12 +54,13 @@ int server_client_close(struct server *const s, struct server_client *const c)
         if (c == ref)
         {
             struct server_client *const next = ref->next;
+            const int res = close(c->fd);
 
-            if ((ret = close(c->fd)))
+            if (res)
             {
                 fprintf(stderr, "%s: close(2): %s\n",
                     __func__, strerror(errno));
-                return -1;
+                ret = -1;
             }
             else if (ref->prev)
                 ref->prev->next = next;
