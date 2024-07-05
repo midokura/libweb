@@ -1,3 +1,3 @@
 [submodule "dynstr"]
 	path = dynstr
-	url = https://codeberg.org/xavidcr/dynstr.git
+	url = https://github.com/midokura/dynstr.git
