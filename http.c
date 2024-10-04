@@ -1546,24 +1546,14 @@ static int end_boundary_line(struct http_ctx *const h)
         /* Found end boundary. */
         struct ctx *const c = &h->ctx;
         struct multiform *const m = &c->u.mf;
+        struct http_payload p = ctx_to_payload(c);
 
-        const struct http_payload p =
+        p.u.post = (const struct http_post)
         {
-            .cookie =
-            {
-                .field = c->field,
-                .value = c->value
-            },
-
-            .op = c->op,
-            .resource = c->resource,
-            .u.post =
-            {
-                .files = m->files,
-                .pairs = m->pairs,
-                .nfiles = m->nfiles,
-                .npairs = m->npairs
-            }
+            .files = m->files,
+            .pairs = m->pairs,
+            .nfiles = m->nfiles,
+            .npairs = m->npairs
         };
 
         return send_payload(h, &p);
@@ -1969,23 +1959,10 @@ static int read_body_to_mem(struct http_ctx *const h, bool *const close)
 
     if (p->read >= p->len)
     {
-        const struct http_payload pl =
-        {
-            .cookie =
-            {
-                .field = c->field,
-                .value = c->value
-            },
-
-            .op = c->op,
-            .resource = c->resource,
-            .u.post =
-            {
-                .data = h->line
-            }
-        };
+        struct http_payload pl = ctx_to_payload(c);
 
         h->line[p->len] = '\0';
+        pl.u.post.data = h->line;
         return send_payload(h, &pl);
     }
 
@@ -2034,22 +2011,9 @@ static int read_to_file(struct http_ctx *const h, bool *const close)
         return -1;
     else if (p->read >= p->len)
     {
-        const struct http_payload pl =
-        {
-            .cookie =
-            {
-                .field = c->field,
-                .value = c->value
-            },
+        struct http_payload pl = ctx_to_payload(c);
 
-            .op = c->op,
-            .resource = c->resource,
-            .u.put =
-            {
-                .tmpname = c->u.put.tmpname
-            }
-        };
-
+        pl.u.put.tmpname = c->u.put.tmpname;
         return send_payload(h, &pl);
     }
 
