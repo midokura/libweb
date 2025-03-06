@@ -1002,6 +1002,17 @@ static int set_content_type(struct http_ctx *const h, const char *const type)
     return 0;
 }
 
+static int set_connection(struct http_ctx *const h, const char *const type)
+{
+    /* From RFC9112, section 9.6 (Teardown):
+     * Note that the field name "Close" is reserved, since using that name
+     * as a header field might conflict with the "close" connection option. */
+    if (!strcmp(type, "close"))
+        h->wctx.close = true;
+
+    return 0;
+}
+
 static struct http_payload ctx_to_payload(const struct ctx *const c)
 {
     return (const struct http_payload)
@@ -1171,6 +1182,11 @@ static int process_header(struct http_ctx *const h, const char *const line,
         {
             .header = "Content-Type",
             .f = set_content_type
+        },
+
+        {
+            .header = "Connection",
+            .f = set_connection
         }
     };
 
